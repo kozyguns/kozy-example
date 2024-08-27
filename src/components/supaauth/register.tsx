@@ -28,7 +28,7 @@ export default function Register() {
           />
           <h1 className="font-bold">Create Account</h1>
           <p className="text-sm">
-            Welcome to AHR! We're excited to have you join!
+            Welcome to AHR! We&apos;re excited to have you join!
           </p>
         </div>
         <Social redirectTo={next || "/"} />
