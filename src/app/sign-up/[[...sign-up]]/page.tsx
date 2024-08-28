@@ -15,6 +15,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Image from "next/image";
 import { toast } from "sonner";
 import { signup, signInWithGoogle } from "@/lib/auth-actions"; // Import the signup and signInWithGoogle functions
 
@@ -86,8 +87,18 @@ export default function SignUp() {
         <CardHeader>
           <CardTitle className="text-xl">Sign Up</CardTitle>
           <CardDescription>
-            Enter your information to create an account or sign up with your
-            Google account
+            <div className="text-center space-y-3">
+              <Image
+                src={"/ahr.png"}
+                alt="ahr logo"
+                width={50}
+                height={50}
+                className=" rounded-full mx-auto"
+              />
+              <p className="text-sm">
+                Welcome to AHR! We&apos;re excited to have you join!
+              </p>
+            </div>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -102,7 +113,7 @@ export default function SignUp() {
                     <Input
                       {...field}
                       id="first_name"
-                      placeholder="Max"
+                      placeholder="Ash"
                       required
                     />
                   )}
@@ -122,7 +133,7 @@ export default function SignUp() {
                     <Input
                       {...field}
                       id="last_name"
-                      placeholder="Robinson"
+                      placeholder="Ketchum"
                       required
                     />
                   )}
@@ -144,7 +155,7 @@ export default function SignUp() {
                     {...field}
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="catchemall@example.com"
                     required
                   />
                 )}

@@ -41,14 +41,14 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <QueryProvider>
+              {/* <QueryProvider> */}
               <NotificationsProvider>
                 <Header />
                 <main>{children}</main>
 
                 <Toaster />
               </NotificationsProvider>
-              </QueryProvider>
+              {/* </QueryProvider> */}
             </ThemeProvider>
           </body>
         </html>

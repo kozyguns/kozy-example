@@ -18,6 +18,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 
 const schema = z.object({
   email: z
@@ -139,7 +140,18 @@ export default function SignIn() {
       <Card className="mx-auto min-w-[350px]">
         <CardHeader>
           <CardTitle className="text-xl">Login</CardTitle>
-          <CardDescription>Welcome Back!</CardDescription>
+          <CardDescription>
+            <div className="text-center space-y-3">
+              <Image
+                src={"/ahr.png"}
+                alt="ahr logo"
+                width={50}
+                height={50}
+                className=" rounded-full mx-auto"
+              />
+              <p className="text-sm">Welcome back!</p>
+            </div>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="membersLogin">
@@ -160,7 +172,7 @@ export default function SignIn() {
                         {...field}
                         id="email"
                         type="email"
-                        placeholder="plinkingchamp@example.com"
+                        placeholder="management@example.com"
                         required
                       />
                     )}
