@@ -9,7 +9,7 @@ import { TextGenerateColor } from "./ui/text-generate-color";
 import { TracingBeam } from "./ui/tracing-beam";
 
 const title = "The Gun Range";
-const sub = "Your One Stop Shop For All Of Your Shooting Needs";
+const sub = "We&apos;ve Got You Covered For All Of Your HR & Staff Management Needs";
 
 const LandingPagePublic: React.FC = React.memo(() => {
   return (
@@ -17,13 +17,13 @@ const LandingPagePublic: React.FC = React.memo(() => {
       <main className="flex-1">
         <TracingBeam className="w-full py-12 md:py-24 lg:py-32 border-y">
           <div className="flex items-start justify-start">
-            <div className="w-full max-w-xl">
+            <div className="w-full mx-auto max-w-xl mb-4">
               <Image
-                src="/Banner.png"
+                src="/AHRBannerbg.png"
                 alt="Banner"
                 layout="responsive"
                 width={1000}
-                height={300}
+                height={365}
                 quality={100}
                 objectFit="contain"
               />
@@ -46,14 +46,13 @@ const LandingPagePublic: React.FC = React.memo(() => {
             <div className="container px-4 md:px-6 space-y-10 xl:space-y-16">
               <div className="grid items-center max-w-[1300px] mx-auto gap-4 px-4 sm:px-6 md:px-10 md:grid-cols-2 md:gap-8">
                 <div>
-                  <h1 className="lg:leading-tighter text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
-                    Elevate Your Shooting Skills
-                  </h1>
-                  <p className="mx-auto max-w-p[600] md:text-xl mt-4">
-                    With our diverse team of certified instructors, you can
-                    learn all about the basics of firearms, all the way up to
-                    getting your CCW and more!
+                <p className="mx-auto max-w-p[600] md:text-xl mb-4">
+                    With our combined 25+ years of experience in the HR & Staff Management field, we can help you with all of your needs!
                   </p>
+                  <h1 className="lg:leading-tighter text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl xl:text-[3.4rem] 2xl:text-[3.75rem]">
+                    Sign Up For Our Conferences
+                  </h1>
+                  
                   <div className="mt-6 space-x-4"></div>
                 </div>
                 <div className="flex justify-center items-center mb-4">
@@ -74,17 +73,13 @@ const LandingPagePublic: React.FC = React.memo(() => {
                 </div>
                 <div>
                   <div className="inline-block rounded-md bg-gray-100 px-3 py-1 text-sm dark:bg-gray-800">
-                    Gun Range Info
+                    AHR Info
                   </div>
                   <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                    Unlock Your Shooting Potential
+                    We Can Guide You Through The Process
                   </h2>
                   <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400 mt-4">
-                    Our gun range offers 20 stalls, all of which are first come
-                    first served (we don&apos;t take appointments). There are
-                    ZERO time limits with your visits. You can rapid fire, and
-                    for CCW holders & Law Enforcement Officers, you can do
-                    holster work.
+                    Our team of experts can guide you through the difficult process of managing your staff and HR needs.
                   </p>
                 </div>
               </div>
