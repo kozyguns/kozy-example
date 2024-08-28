@@ -10,6 +10,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import QueryProvider from "@/components/query-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,12 +41,14 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <QueryProvider>
               <NotificationsProvider>
                 <Header />
                 <main>{children}</main>
 
                 <Toaster />
               </NotificationsProvider>
+              </QueryProvider>
             </ThemeProvider>
           </body>
         </html>

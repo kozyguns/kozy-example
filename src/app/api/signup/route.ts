@@ -1,5 +1,5 @@
 import SupaAuthVerifyEmail from "@/emails";
-import supabaseAdmin from "@/utils/supabase/admin";
+import supabaseAdmin from "@/lib/supabase/admin";
 
 import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 	if (res.data.properties?.email_otp) {
 		// resend email
 		const resendRes = await resend.emails.send({
-			from: `AHR <onboarding@${process.env.RESEND_DOMAIN}>`,
+			from: `Acme <onboarding@${process.env.RESEND_DOMAIN}>`,
 			to: [data.email],
 			subject: "Verify Email",
 			react: SupaAuthVerifyEmail({

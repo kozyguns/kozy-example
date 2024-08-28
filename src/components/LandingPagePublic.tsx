@@ -9,7 +9,7 @@ import { TextGenerateColor } from "./ui/text-generate-color";
 import { TracingBeam } from "./ui/tracing-beam";
 
 const title = "The Gun Range";
-const sub = "We&apos;ve Got You Covered For All Of Your HR & Staff Management Needs";
+const sub = "We've Got You Covered For All Of Your HR & Staff Management Needs";
 
 const LandingPagePublic: React.FC = React.memo(() => {
   return (
