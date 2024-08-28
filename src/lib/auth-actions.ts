@@ -21,7 +21,7 @@ export async function handlePostGoogleSignIn() {
   const firstName = user.user_metadata?.full_name?.split(' ')[0] || user.email.split('@')[0];
   const lastName = user.user_metadata?.full_name?.split(' ')[1] || '';
 
-  if (emailDomain === "thegunrange.biz") {
+  if (emailDomain === "gmail.com"  || emailDomain === "kozykoding.com" || emailDomain === "abelbookkeeping.com") {
     // Check if the user already exists in the employees table
     const { data: existingEmployee } = await supabase
       .from("employees")
