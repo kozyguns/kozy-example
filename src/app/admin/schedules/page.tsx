@@ -403,8 +403,9 @@ const ManageSchedules = () => {
     employeeName: string,
     _: string | undefined,
     date?: string,
-    startTime?: string,
-    endTime?: string
+    startTime?: string | null,
+    endTime?: string | null,
+    isOff?: boolean
   ) => {
     const employee = employees.find((emp) => emp.name === employeeName);
     if (!employee) {
@@ -456,18 +457,33 @@ const ManageSchedules = () => {
     employeeName: string,
     _: string | undefined,
     date?: string,
-    startTime?: string,
-    endTime?: string
+    startTime?: string | null,
+    endTime?: string | null,
+    isOff?: boolean
   ) => {
     const employee = employees.find((emp) => emp.name === employeeName);
-    if (!employee || !date || !startTime || !endTime) {
+    if (!employee || !date) {
       console.error("Missing required information for updating schedule");
+      return;
+    }
+
+    let updateData = {};
+    if (isOff) {
+      updateData = { start_time: null, end_time: null, status: "off" };
+    } else if (startTime && endTime) {
+      updateData = {
+        start_time: startTime,
+        end_time: endTime,
+        status: "scheduled",
+      };
+    } else {
+      console.error("Invalid update data");
       return;
     }
 
     const { error } = await supabase
       .from("schedules")
-      .update({ start_time: startTime, end_time: endTime })
+      .update(updateData)
       .eq("employee_id", employee.employee_id)
       .eq("schedule_date", date);
 
@@ -583,17 +599,21 @@ const ManageSchedules = () => {
                   <PopoverForm
                     onSubmit={(
                       employeeName: string,
-                      _,
+                      weeks?: string,
                       date?: string,
-                      startTime?: string,
-                      endTime?: string
+                      startTime?: string | null,
+                      endTime?: string | null,
+                      lunchStart?: string,
+                      lunchEnd?: string,
+                      isOff?: boolean
                     ) =>
                       handleAddSchedule(
                         employeeName,
                         undefined,
                         date,
                         startTime,
-                        endTime
+                        endTime,
+                        isOff
                       )
                     }
                     buttonText="Add An Unscheduled Shift"
@@ -612,17 +632,21 @@ const ManageSchedules = () => {
                   <PopoverForm
                     onSubmit={(
                       employeeName: string,
-                      _,
+                      weeks?: string,
                       date?: string,
-                      startTime?: string,
-                      endTime?: string
+                      startTime?: string | null,
+                      endTime?: string | null,
+                      lunchStart?: string,
+                      lunchEnd?: string,
+                      isOff?: boolean
                     ) =>
                       handleUpdateSchedule(
                         employeeName,
                         undefined,
                         date,
                         startTime,
-                        endTime
+                        endTime,
+                        isOff
                       )
                     }
                     buttonText="Update Existing Shift"

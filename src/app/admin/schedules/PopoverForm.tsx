@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TimesheetData {
   id: number;
@@ -36,10 +37,11 @@ interface PopoverFormProps {
     employeeName: string,
     weeks?: string,
     date?: string,
-    startTime?: string,
-    endTime?: string,
+    startTime?: string | null, // Change this line
+    endTime?: string | null, // Change this line
     lunchStart?: string,
-    lunchEnd?: string
+    lunchEnd?: string,
+    isOff?: boolean
   ) => void;
   buttonText: string;
   placeholder: string;
@@ -52,7 +54,10 @@ interface PopoverFormProps {
     | "editTimesheet"
     | "updateSchedule";
   row?: TimesheetData;
-  fetchSchedule?: (employeeId: number, date: string) => Promise<{ start_time: string; end_time: string } | null>;
+  fetchSchedule?: (
+    employeeId: number,
+    date: string
+  ) => Promise<{ start_time: string; end_time: string } | null>;
 }
 
 export const PopoverForm: React.FC<PopoverFormProps> = ({
@@ -72,6 +77,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
   const [endTime, setEndTime] = useState("");
   const [lunchStart, setLunchStart] = useState(row?.lunch_start || "");
   const [lunchEnd, setLunchEnd] = useState(row?.lunch_end || "");
+  const [isOff, setIsOff] = useState(false);
 
   const handleSubmit = async () => {
     if (formType === "generate" || formType === "clearSchedule") {
@@ -96,7 +102,8 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
       employeeId &&
       date &&
       startTime &&
-      endTime
+      endTime &&
+      isOff
     ) {
       const selectedEmployee = employees?.find(
         (emp) => emp.employee_id === employeeId
@@ -251,7 +258,8 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
                   className="mt-2"
                 />
               )}
-              {(formType === "addSchedule" || formType === "updateSchedule") && (
+              {(formType === "addSchedule" ||
+                formType === "updateSchedule") && (
                 <>
                   <div>
                     <Label>Date</Label>
@@ -279,6 +287,42 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
                   </div>
                 </>
               )}
+              {(formType === "addSchedule" ||
+                formType === "updateSchedule") && (
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox
+                    id="isOff"
+                    checked={isOff}
+                    onCheckedChange={(checked) => setIsOff(checked as boolean)}
+                  />
+                  <label
+                    htmlFor="isOff"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Set as day off
+                  </label>
+                </div>
+              )}
+              {/* {!isOff && (
+                <>
+                  <div>
+                    <Label>Start Time</Label>
+                    <Input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>End Time</Label>
+                    <Input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                    />
+                  </div>
+                </>
+              )} */}
             </>
           )}
           <Button variant="linkHover1" className="mt-2" onClick={handleSubmit}>
