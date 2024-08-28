@@ -33,7 +33,7 @@ export const TextGenerateColor = ({
           return (
             <motion.span
               key={word + idx}
-              className="dark:text-red-500 text-red opacity-0"
+              className="dark:text-amber-500 text-red opacity-0"
             >
               {word}{" "}
             </motion.span>
@@ -46,7 +46,7 @@ export const TextGenerateColor = ({
   return (
     <div className={cn("font-bold", className)}>
       <div className="mt-4">
-        <div className="dark:text-red-500 text-red leading-snug tracking-tight">
+        <div className="dark:text-orange-500 text-red leading-snug tracking-tight">
           {renderWords()}
         </div>
       </div>
