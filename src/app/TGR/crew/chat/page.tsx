@@ -1297,7 +1297,7 @@ function ChatContent() {
                           <AlertDialogDescription>
                             This action cannot be undone. This will permanently
                             delete the chat and remove it from all involved
-                            users' message lists.
+                            users&apos; message lists.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
