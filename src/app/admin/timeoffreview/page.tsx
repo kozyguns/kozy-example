@@ -22,6 +22,7 @@ interface TimeOffRequest {
   email: string;
   use_sick_time: boolean; // New field
   available_sick_time: number; // New field
+  created_at: string; // Add this line
 }
 
 export default function ApproveRequestsPage() {
@@ -38,7 +39,7 @@ export default function ApproveRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      const response = await fetch("/api/time_off_requests");
+      const response = await fetch("/api/time_off_requests?sort=created_at");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

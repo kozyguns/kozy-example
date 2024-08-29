@@ -50,7 +50,7 @@ export function EmployeeTableRowActions<TData>({
     try {
       await onUpdateSchedule(employee.employee_id, schedules);
       setIsScheduleDialogOpen(false);
-      toast.success("Schedule updated successfully");
+      // toast.success("Schedule updated successfully");
     } catch (error) {
       console.error("Error updating schedule:", error);
       toast.error("Failed to update schedule");

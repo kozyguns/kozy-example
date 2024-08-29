@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import {
   useReactTable,
   ColumnDef,
@@ -20,18 +20,28 @@ interface DataTableProps<TData> {
   fetchReferenceSchedules: () => void; // Function to refresh schedules after update
 }
 
-export function DataTable<TData>({
+const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export function DataTable<TData extends { employee_name: string; day_of_week: string }>({
   columns,
   data,
   fetchReferenceSchedules,
 }: DataTableProps<TData>) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [searchInput, setSearchInput] = React.useState("");
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [searchInput, setSearchInput] = useState("");
+  const [sortedData, setSortedData] = useState<TData[]>([]);
+
+  useEffect(() => {
+    const sorted = [...data].sort((a, b) => {
+      const employeeComparison = a.employee_name.localeCompare(b.employee_name);
+      if (employeeComparison !== 0) return employeeComparison;
+      return daysOfWeek.indexOf(a.day_of_week) - daysOfWeek.indexOf(b.day_of_week);
+    });
+    setSortedData(sorted);
+  }, [data]);
 
   const table = useReactTable({
-    data,
+    data: sortedData,
     columns,
     state: {
       columnFilters,

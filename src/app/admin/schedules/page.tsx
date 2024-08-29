@@ -466,27 +466,28 @@ const ManageSchedules = () => {
       console.error("Missing required information for updating schedule");
       return;
     }
-
+  
     let updateData = {};
     if (isOff) {
       updateData = { start_time: null, end_time: null, status: "off" };
-    } else if (startTime && endTime) {
+    } else {
       updateData = {
-        start_time: startTime,
-        end_time: endTime,
+        start_time: startTime || null,
+        end_time: endTime || null,
         status: "scheduled",
       };
-    } else {
-      console.error("Invalid update data");
-      return;
     }
-
+  
     const { error } = await supabase
-      .from("schedules")
-      .update(updateData)
-      .eq("employee_id", employee.employee_id)
-      .eq("schedule_date", date);
-
+      .from("reference_schedules")
+      .upsert({
+        employee_id: employee.employee_id,
+        day_of_week: date,
+        ...updateData,
+      }, {
+        onConflict: 'employee_id,day_of_week'
+      });
+  
     if (error) {
       console.error("Error updating schedule:", error);
       toast.error("Failed to update schedule");

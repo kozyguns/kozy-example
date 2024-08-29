@@ -15,7 +15,7 @@ interface SickTimeReport {
   name: string;
   available_sick_time: number;
   used_sick_time: number;
-  used_dates: string[];
+  used_dates: string[]; // This is now a string[] of ISO date strings
 }
 
 interface SickTimeTableProps {
@@ -40,7 +40,7 @@ export const SickTimeTable: FC<SickTimeTableProps> = ({ data }) => {
           <TableHead>Employee Name</TableHead>
           <TableHead>Available Sick Time</TableHead>
           <TableHead>Used Sick Time</TableHead>
-          <TableHead>Used Date</TableHead>
+          <TableHead>Used Dates</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -62,8 +62,9 @@ export const SickTimeTable: FC<SickTimeTableProps> = ({ data }) => {
               <TableCell>{row.available_sick_time.toFixed(2)} hours</TableCell>
               <TableCell>{row.used_sick_time.toFixed(2)} hours</TableCell>
               <TableCell>
-                {row.used_dates.length} day
-                {row.used_dates.length !== 1 ? "s" : ""}
+                {row.used_dates.length > 0
+                  ? `${row.used_dates.length} day${row.used_dates.length !== 1 ? "s" : ""}`
+                  : "No sick days used"}
               </TableCell>
             </TableRow>
             {expandedRows[row.employee_id] &&
@@ -73,8 +74,7 @@ export const SickTimeTable: FC<SickTimeTableProps> = ({ data }) => {
                   <TableCell></TableCell>
                   <TableCell></TableCell>
                   <TableCell>
-                    {(row.used_sick_time / row.used_dates.length).toFixed(2)}{" "}
-                    hours
+                    {(row.used_sick_time / row.used_dates.length).toFixed(2)} hours
                   </TableCell>
                   <TableCell>{format(new Date(date), "MM/dd/yyyy")}</TableCell>
                 </TableRow>

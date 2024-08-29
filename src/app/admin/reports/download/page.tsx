@@ -15,7 +15,7 @@ interface SickTimeReport {
   name: string; // Change this from employee_name to name
   available_sick_time: number;
   used_sick_time: number;
-  used_dates: string[];
+  used_dates: string[]; // We'll convert Date[] to string[] in the fetch function
 }
 
 interface TimesheetReport {

@@ -90,7 +90,7 @@ export default function AddEmployeeDialog({
     e.preventDefault();
 
     try {
-      console.log("New employee data:", newEmployee);
+      // console.log("New employee data:", newEmployee);
 
       // Add the employee
       const { data: insertedEmployee, error: employeeError } = await supabase

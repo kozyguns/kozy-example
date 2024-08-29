@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { format, parse } from "date-fns";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -42,36 +41,38 @@ export function EditScheduleDialog({
 
   const loadSchedule = async () => {
     const weeklySchedule = await fetchWeeklySchedule(employeeId);
-    setSchedules(weeklySchedule);
+    const formattedSchedule: WeeklySchedule = {};
+    for (const [day, times] of Object.entries(weeklySchedule)) {
+      formattedSchedule[day] = {
+        start_time: times.start_time ? times.start_time.slice(0, 5) : "",
+        end_time: times.end_time ? times.end_time.slice(0, 5) : "",
+      };
+    }
+    setSchedules(formattedSchedule);
   };
 
-  const formatTime = (time: string | null): string => {
-    if (!time) return "";
-    const date = parse(time, "HH:mm:ss", new Date());
-    return format(date, "h:mm a");
-  };
-
-  const parseTime = (time: string): string | null => {
-    if (!time) return null;
-    const date = parse(time, "h:mm a", new Date());
-    return format(date, "HH:mm:ss");
-  };
-
-  const handleInputChange = (
+  const handleTimeChange = (
     day: string,
     field: "start_time" | "end_time",
     value: string
   ) => {
     setSchedules((prev) => ({
       ...prev,
-      [day]: { ...prev[day], [field]: parseTime(value) },
+      [day]: { ...prev[day], [field]: value },
     }));
   };
 
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      await onUpdateSchedule(schedules);
+      const parsedSchedules: WeeklySchedule = {};
+      for (const [day, times] of Object.entries(schedules)) {
+        parsedSchedules[day] = {
+          start_time: times.start_time ? `${times.start_time}:00` : null,
+          end_time: times.end_time ? `${times.end_time}:00` : null,
+        };
+      }
+      await onUpdateSchedule(parsedSchedules);
       onClose();
     } catch (error) {
       console.error("Error updating schedule:", error);
@@ -94,19 +95,19 @@ export function EditScheduleDialog({
               </Label>
               <Input
                 id={`${day}-start`}
-                value={formatTime(times.start_time)}
+                type="time"
+                value={times.start_time || ""}
                 onChange={(e) =>
-                  handleInputChange(day, "start_time", e.target.value)
+                  handleTimeChange(day, "start_time", e.target.value)
                 }
-                placeholder="Start Time"
               />
               <Input
                 id={`${day}-end`}
-                value={formatTime(times.end_time)}
+                type="time"
+                value={times.end_time || ""}
                 onChange={(e) =>
-                  handleInputChange(day, "end_time", e.target.value)
+                  handleTimeChange(day, "end_time", e.target.value)
                 }
-                placeholder="End Time"
               />
             </div>
           ))}
