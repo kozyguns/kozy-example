@@ -108,6 +108,7 @@ function ChatContent() {
   const [chatType, setChatType] = useState<"dm" | "group">("dm");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [isChatActive, setIsChatActive] = useState(true);
   const debouncedSetMessages = useCallback(debounce(setMessages, 300), [
     setMessages,
   ]);
@@ -125,6 +126,23 @@ function ChatContent() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    setIsChatActive(true);
+
+    // Dispatch a custom event to notify the header that the chat is active
+    window.dispatchEvent(
+      new CustomEvent("chatActiveChange", { detail: { isActive: true } })
+    );
+
+    return () => {
+      setIsChatActive(false);
+      // Dispatch a custom event to notify the header that the chat is inactive
+      window.dispatchEvent(
+        new CustomEvent("chatActiveChange", { detail: { isActive: false } })
+      );
+    };
+  }, []);
 
   // Function to handle chat type selection
   const handleChatTypeSelection = (type: "dm" | "group") => {
@@ -691,50 +709,34 @@ function ChatContent() {
     if (data && data.length > 0) {
       const newGroupChat = data[0];
 
-      // Check if the group chat already exists in dmUsers
-      const existingGroupChat = dmUsers.find(
-        (u) => u.id === `group_${newGroupChat.id}`
-      );
+      // Add the new group chat to dmUsers for the current user
+      setDmUsers((prev) => [
+        ...prev,
+        {
+          id: `group_${newGroupChat.id}`,
+          name: newGroupChat.name,
+          is_online: true,
+          users: newGroupChat.users,
+        },
+      ]);
 
-      if (!existingGroupChat) {
-        setDmUsers((prev) => {
-          // Ensure no duplicates
-          const existingGroupChat = prev.find(
-            (user) => user.id === `group_${newGroupChat.id}`
-          );
-          if (existingGroupChat) {
-            return prev;
-          }
+      // Set the newly created group chat as the selected chat
+      setSelectedChat(`group_${newGroupChat.id}`);
 
-          return [
-            ...prev,
-            {
-              id: `group_${newGroupChat.id}`,
-              name: newGroupChat.name,
-              is_online: true,
-              users: newGroupChat.users,
-            },
-          ];
-        });
+      // Fetch initial messages for the new group chat
+      const { data: initialMessages, error: messagesError } = await supabase
+        .from("group_chat_messages")
+        .select("*")
+        .eq("group_chat_id", newGroupChat.id)
+        .order("created_at", { ascending: true });
 
-        // Set the newly created group chat as the selected chat
-        setSelectedChat(`group_${newGroupChat.id}`);
-
-        // Fetch initial messages for the new group chat
-        const { data: initialMessages, error: messagesError } = await supabase
-          .from("group_chat_messages")
-          .select("*")
-          .eq("group_chat_id", newGroupChat.id)
-          .order("created_at", { ascending: true });
-
-        if (messagesError) {
-          console.error(
-            "Error fetching initial group messages:",
-            messagesError.message
-          );
-        } else {
-          setMessagesWithoutDuplicates(initialMessages || []);
-        }
+      if (messagesError) {
+        console.error(
+          "Error fetching initial group messages:",
+          messagesError.message
+        );
+      } else {
+        setMessagesWithoutDuplicates(initialMessages || []);
       }
     }
     setSelectedUsers([]); // Clear selected users
@@ -939,7 +941,7 @@ function ChatContent() {
         (payload) => {
           setMessagesWithoutDuplicates([payload.new]);
           // Update unread status for group chats
-          if (payload.new.sender_id !== user.id) {
+          if (payload.new.sender_id !== user.id && !isChatActive) {
             setUnreadStatus((prevStatus) => ({
               ...prevStatus,
               [`group_${payload.new.group_chat_id}`]: true,
@@ -976,7 +978,7 @@ function ChatContent() {
         async (payload) => {
           setMessagesWithoutDuplicates([payload.new]);
 
-          if (payload.new.receiver_id === user?.id) {
+          if (payload.new.receiver_id === user?.id && !isChatActive) {
             const senderId = payload.new.sender_id;
 
             if (typeof senderId === "string") {
@@ -1016,7 +1018,7 @@ function ChatContent() {
       groupChatMessageSubscription.unsubscribe();
       directMessageSubscription.unsubscribe();
     };
-  }, [user, dmUsers, unreadStatus, fetchUnreadCounts]);
+  }, [user, dmUsers, unreadStatus, fetchUnreadCounts, isChatActive]);
 
   const setMessagesWithoutDuplicates = useCallback(
     (newMessages: ChatMessage[]) => {
