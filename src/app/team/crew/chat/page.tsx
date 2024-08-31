@@ -1053,7 +1053,14 @@ function ChatContent() {
           }
         }
       } else if (payload.eventType === "DELETE") {
-        setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id));
+        // console.log(`Deleting ${chatType} message:`, payload.old.id);
+        setMessages((prev) => {
+          const updatedMessages = prev.filter(
+            (msg) => msg.id !== payload.old.id
+          );
+          // console.log('Updated messages after deletion:', updatedMessages);
+          return updatedMessages;
+        });
       } else if (payload.eventType === "UPDATE") {
         setMessages((prev) =>
           prev.map((msg) => (msg.id === payload.new.id ? payload.new : msg))
