@@ -22,7 +22,7 @@ export default function TimeOffDenied({ name, startDate, endDate }: TimeOffDenie
           <Text style={paragraph}>
             Please contact your manager directly for more information or to discuss alternative options.
           </Text>
-          <Button href="https://kozy-example.vercel.app/TGR/crew/calendar" style={button}>
+          <Button href="https://kozy-example.vercel.app/team/crew/calendar" style={button}>
             View Your Schedule
           </Button>
         </Container>

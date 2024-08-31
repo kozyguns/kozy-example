@@ -56,19 +56,19 @@
 //         const { role, employee_id } = roleData;
 //         switch (role) {
 //           case "admin":
-//             router.push(`/TGR/crew/profile/${employee_id}`);
+//             router.push(`/team/crew/profile/${employee_id}`);
 //             break;
 //           case "super admin":
-//             router.push(`/TGR/crew/profile/${employee_id}`);
+//             router.push(`/team/crew/profile/${employee_id}`);
 //             break;
 //           case "gunsmith":
-//             router.push(`/TGR/crew/profile/${employee_id}`);
+//             router.push(`/team/crew/profile/${employee_id}`);
 //             break;
 //           case "auditor":
-//             router.push(`/TGR/crew/profile/${employee_id}`);
+//             router.push(`/team/crew/profile/${employee_id}`);
 //             break;
 //           default:
-//             router.push(`/TGR/crew/profile/${employee_id}`);
+//             router.push(`/team/crew/profile/${employee_id}`);
 //             break;
 //         }
 //       }

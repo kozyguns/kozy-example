@@ -67,20 +67,20 @@ const auditComponents = [
   },
   {
     title: "DROS Guidance",
-    href: "/TGR/dros/guide",
+    href: "/team/dros/guide",
     description: "Sometimes We All Need A Lil' Help",
   },
 ];
 
 const schedComponents = [
   {
-    title: "Calendar",
-    href: "/TGR/crew/calendar",
-    description: "Where Dey At",
+    title: "Company Calendar",
+    href: "/team/crew/calendar",
+    description: "Who's Working & When",
   },
   {
     title: "Submit Time Off",
-    href: "/TGR/crew/timeoffrequest",
+    href: "/team/crew/timeoffrequest",
     description: "Submit A Request",
   },
   {
@@ -89,9 +89,9 @@ const schedComponents = [
     description: "View All Requests For Time Off",
   },
   {
-    title: "Create | Manage Schedules",
+    title: "Schedule Management",
     href: "/admin/schedules",
-    description: "Manage Schedules & Timesheets",
+    description: "Create, Edit, Delete Schedules",
   },
   {
     title: "Staff Profiles",
@@ -126,30 +126,30 @@ const serviceComponents = [
 const formComps = [
   {
     title: "Range Walks",
-    href: "/TGR/rangewalk",
+    href: "/team/rangewalk",
     description: "Submit Daily Range Walks",
   },
   {
     title: "Daily Deposits",
-    href: "/TGR/deposits",
+    href: "/team/deposits",
     description: "Submit Daily Deposits",
   },
   {
     title: "Points Submissions",
-    href: "/TGR/crew/points",
+    href: "/team/crew/points",
     description: "Report All Submitted Points",
   },
   {
     title: "Checklist",
-    href: "/TGR/rentals/checklist",
+    href: "/team/rentals/checklist",
     description: "Daily Rental Checklist",
   },
 ];
 
 const sopComps = [
   {
-    title: "TGR SOPs",
-    href: "/TGR/sop",
+    title: "Team SOPs",
+    href: "/team/sop",
     description: "SOPs For Front Of The House",
   },
   {
@@ -172,12 +172,12 @@ const reportsComps = [
   },
   {
     title: "Range Walks & Repairs",
-    href: "/TGR/rangewalk/report",
+    href: "/team/rangewalk/report",
     description: "View All Range Walks & Repairs",
   },
   {
     title: "Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
   {
@@ -187,7 +187,7 @@ const reportsComps = [
   },
   {
     title: "Gunsmithing",
-    href: "/TGR/gunsmithing",
+    href: "/team/gunsmithing",
     description: "Weekly Gunsmithing Maintenance",
   },
   {
@@ -224,9 +224,9 @@ const manageComps = [
     description: "Download Various Reports",
   },
   {
-    title: "Manage Employee Data",
-    href: "/TGR/employees",
-    description: "Set All Employee Details",
+    title: "Staff Management",
+    href: "/team/employees",
+    description: "Manage Profiles, Schedules, etc.",
   },
   {
     title: "Audit Management",
@@ -253,27 +253,27 @@ const comboComps = [
   },
   {
     title: "View Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
   {
     title: "Submit Range Walks",
-    href: "/TGR/rangewalk",
+    href: "/team/rangewalk",
     description: "Submit Daily Range Walks",
   },
   {
     title: "Submit Range Repairs",
-    href: "/TGR/rangewalk/report",
+    href: "/team/rangewalk/report",
     description: "View All Range Walks & Repairs",
   },
   {
     title: "Submit Daily Deposits",
-    href: "/TGR/deposits",
+    href: "/team/deposits",
     description: "Daily Deposits",
   },
   {
     title: "Submit Claimed Points",
-    href: "/TGR/crew/points",
+    href: "/team/crew/points",
     description: "Report All Submitted Points",
   },
   {
@@ -288,12 +288,12 @@ const comboComps = [
   },
   {
     title: "Gunsmithing",
-    href: "/TGR/gunsmithing",
+    href: "/team/gunsmithing",
     description: "Weekly Gunsmithing Maintenance",
   },
   {
     title: "Rental Firearms Checklist",
-    href: "/TGR/rentals/checklist",
+    href: "/team/rentals/checklist",
     description: "Rental Inventory Check",
   },
 ];
@@ -485,7 +485,7 @@ const HeaderSuperAdmin = React.memo(() => {
       setTotalUnreadCount(0);
 
       // Navigate to the chat page
-      router.push("/TGR/crew/chat");
+      router.push("/team/crew/chat");
     }
   };
 
@@ -507,7 +507,7 @@ const HeaderSuperAdmin = React.memo(() => {
     },
     {
       title: "Your Profile",
-      href: employeeId ? `/TGR/crew/profile/${employeeId}` : "#",
+      href: employeeId ? `/team/crew/profile/${employeeId}` : "#",
       description: "Your Personal Profile",
     },
   ];
@@ -695,7 +695,7 @@ const HeaderSuperAdmin = React.memo(() => {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/TGR/crew/login">
+            <Link href="/team/crew/login">
               <Button variant="linkHover2">Sign In</Button>
             </Link>
           )}

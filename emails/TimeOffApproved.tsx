@@ -22,7 +22,7 @@ export default function TimeOffApproved({ name, startDate, endDate }: TimeOffApp
           <Text style={paragraph}>
             If you have any questions or need to make changes, please contact your manager.
           </Text>
-          <Button href="https://kozy-example.vercel.app/TGR/crew/calendar" style={button}>
+          <Button href="https://kozy-example.vercel.app/team/crew/calendar" style={button}>
             View Your Schedule
           </Button>
         </Container>

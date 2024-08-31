@@ -21,7 +21,7 @@ export default function CalledOut({ name, date }: CalledOutProps) {
           <Text style={paragraph}>
             If this is an error or you need to discuss this further, please contact your manager as soon as possible.
           </Text>
-          <Button href="https://kozy-example.vercel.app/TGR/crew/calendar" style={button}>
+          <Button href="https://kozy-example.vercel.app/team/crew/calendar" style={button}>
             View Your Schedule
           </Button>
         </Container>

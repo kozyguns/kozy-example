@@ -42,7 +42,7 @@ import {
             If you have any questions or concerns about this change, please contact your supervisor.
           </Text>
           <Text style={text}>Thank you for your flexibility and understanding!</Text>
-          <Button href="https://kozy-example.vercel.app/TGR/crew/calendar" style={button}>
+          <Button href="https://kozy-example.vercel.app/team/crew/calendar" style={button}>
             View Your Schedule
           </Button>
         </Container>

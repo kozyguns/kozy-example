@@ -23,7 +23,7 @@ export default function Component() {
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage alt="Main Phone" src="/placeholder-avatar.jpg" />
-                  <AvatarFallback>TGR</AvatarFallback>
+                  <AvatarFallback>AHR</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">The Gun Range</p>

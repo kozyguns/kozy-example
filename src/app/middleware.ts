@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
     // Redirect to the correct profile page based on role
     if (url.pathname === "/auth" || url.pathname === "/") {
-      return NextResponse.redirect(new URL(`/TGR/crew/profile/${employeeId}`, request.url));
+      return NextResponse.redirect(new URL(`/team/crew/profile/${employeeId}`, request.url));
     }
   }
 
@@ -55,7 +55,7 @@ export const config = {
   matcher: [
     "/admin(.*)",
     "/api/(.*)",
-    "/TGR(.*)",
+    "/team(.*)",
     "/sales(.*)",
     "/((?!_next/static|_next/image|favicon.ico).*)",
   ],

@@ -60,7 +60,7 @@ const useRealtimeNotifications = () => {
           const chatName = isGroupChat ? await fetchGroupChatName(payload.new.group_chat_id) : senderName;
 
           // Check if the user is on the chat page
-          const isOnChatPage = pathname === "/TGR/crew/chat";
+          const isOnChatPage = pathname === "/team/crew/chat";
 
           // Fetch the current chat context from localStorage
           const currentChat = localStorage.getItem("currentChat");
@@ -76,7 +76,7 @@ const useRealtimeNotifications = () => {
                 label: "Open",
                 onClick: () => {
                   router.push(
-                    `/TGR/crew/chat${isAdminChat ? "" : isGroupChat ? `?group=${payload.new.group_chat_id}` : `?dm=${payload.new.sender_id}`}`
+                    `/team/crew/chat${isAdminChat ? "" : isGroupChat ? `?group=${payload.new.group_chat_id}` : `?dm=${payload.new.sender_id}`}`
                   );
                 },
               },

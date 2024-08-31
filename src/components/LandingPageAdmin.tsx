@@ -32,7 +32,7 @@ const LandingPageAdmin: React.FC = React.memo(() => {
     return (
       <div>
         <h1>You must be signed in to view this page.</h1>
-        <Link href="/TGR/crew/login">
+        <Link href="/team/crew/login">
           <Button>Sign In</Button>
         </Link>
       </div>

@@ -30,7 +30,7 @@ const LandingPageUser: React.FC = React.memo(() => {
     return (
       <div>
         <h1>You must be signed in to view this page.</h1>
-        <Link href="/TGR/crew/login">
+        <Link href="/team/crew/login">
           <Button>Sign In</Button>
         </Link>
       </div>
@@ -48,13 +48,13 @@ const LandingPageUser: React.FC = React.memo(() => {
             <p className="max-w-[600px] text-gray-500 md:text-xl dark:text-gray-400">
               <TextGenerateEffect words={subwords} />
             </p>
-            <Image
-              src="/Sales Winner.png"
+            {/* <Image
+              src="/AHRBannerbg.png"
               alt="WinnaWinna"
               width={600}
               height={400}
               className="rounded-lg shadow-md"
-            />
+            /> */}
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-// src/app/TGR/certifications/updateStatus.ts
+// src/app/team/certifications/updateStatus.ts
 import { createClient } from '@supabase/supabase-js';
 import {supabase} from '@/utils/supabase/client';
 

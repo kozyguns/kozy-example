@@ -84,7 +84,7 @@ const TimeOffRequestComponent = ({ employeeName }: { employeeName: string }) => 
   return (
     <div className="w-full max-w-lg mx-auto px-4 py-8 md:py-12">
       <h1 className="text-2xl font-bold mb-4">
-        <TextGenerateEffect words="Submit Time Off Requests" />
+        <TextGenerateEffect words="Submit Time Off" />
       </h1>
       <div className="w-full space-y-4">
         <form onSubmit={handleSubmit} className="mt-8">

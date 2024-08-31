@@ -64,7 +64,7 @@ const auditComponents = [
   },
   {
     title: "DROS Guidance",
-    href: "/TGR/dros/guide",
+    href: "/team/dros/guide",
     description: "Sometimes We All Need A Lil' Help",
   },
 ];
@@ -72,12 +72,12 @@ const auditComponents = [
 const schedComponents = [
   {
     title: "Calendar",
-    href: "/TGR/crew/calendar",
+    href: "/team/crew/calendar",
     description: "Where Dey At",
   },
   {
     title: "Submit Time Off",
-    href: "/TGR/crew/timeoffrequest",
+    href: "/team/crew/timeoffrequest",
     description: "Submit A Request",
   },
   {
@@ -118,22 +118,22 @@ const serviceComponents = [
 const formComps = [
   {
     title: "Submit Range Walks",
-    href: "/TGR/rangewalk",
+    href: "/team/rangewalk",
     description: "Submit Daily Range Walks",
   },
   {
     title: "Daily Deposits",
-    href: "/TGR/deposits",
+    href: "/team/deposits",
     description: "Submit Daily Deposits",
   },
   {
     title: "Points Submissions",
-    href: "/TGR/crew/points",
+    href: "/team/crew/points",
     description: "Report All Submitted Points",
   },
   {
     title: "Rental Firearms Checklist",
-    href: "/TGR/rentals/checklist",
+    href: "/team/rentals/checklist",
     description: "Rental Inventory Check",
   },
 ];
@@ -146,12 +146,12 @@ const reportsComps = [
   },
   {
     title: "View Range Walks & Repairs",
-    href: "/TGR/rangewalk/report",
+    href: "/team/rangewalk/report",
     description: "View All Range Walks & Repairs",
   },
   {
     title: "Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
   {
@@ -161,7 +161,7 @@ const reportsComps = [
   },
   {
     title: "Gunsmithing",
-    href: "/TGR/gunsmithing",
+    href: "/team/gunsmithing",
     description: "Weekly Gunsmithing Maintenance",
   },
 
@@ -174,8 +174,8 @@ const reportsComps = [
 
 const sopComps = [
   {
-    title: "TGR SOPs",
-    href: "/TGR/sop",
+    title: "Team SOPs",
+    href: "/team/sop",
     description: "SOPs For Front Of The House",
   },
   {
@@ -234,27 +234,27 @@ const comboComps = [
   },
   {
     title: "View Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
   {
     title: "Submit Range Walks",
-    href: "/TGR/rangewalk",
+    href: "/team/rangewalk",
     description: "Submit Daily Range Walks",
   },
   {
     title: "Submit Range Repairs",
-    href: "/TGR/rangewalk/report",
+    href: "/team/rangewalk/report",
     description: "View All Range Walks & Repairs",
   },
   {
     title: "Submit Daily Deposits",
-    href: "/TGR/deposits",
+    href: "/team/deposits",
     description: "Daily Deposits",
   },
   {
     title: "Submit Claimed Points",
-    href: "/TGR/crew/points",
+    href: "/team/crew/points",
     description: "Report All Submitted Points",
   },
   {
@@ -269,7 +269,7 @@ const comboComps = [
   },
   {
     title: "Rental Firearms Checklist",
-    href: "/TGR/rentals/checklist",
+    href: "/team/rentals/checklist",
     description: "Rental Inventory Check",
   },
 ];
@@ -462,7 +462,7 @@ const HeaderAdmin = React.memo(() => {
       setTotalUnreadCount(0);
 
       // Navigate to the chat page
-      router.push("/TGR/crew/chat");
+      router.push("/team/crew/chat");
     }
   };
 
@@ -636,7 +636,7 @@ const HeaderAdmin = React.memo(() => {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/TGR/crew/login">
+            <Link href="/team/crew/login">
               <Button variant="linkHover2">Sign In</Button>
             </Link>
           )}

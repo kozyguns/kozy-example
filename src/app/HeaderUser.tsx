@@ -38,12 +38,12 @@ import { useTheme } from "next-themes";
 const schedComponents = [
   {
     title: "Calendar",
-    href: "/TGR/crew/calendar",
+    href: "/team/crew/calendar",
     description: "Check Out The Work Schedule",
   },
   {
     title: "Time Off Request",
-    href: "/TGR/crew/timeoffrequest",
+    href: "/team/crew/timeoffrequest",
     description: "Submit A Request",
   },
 ];
@@ -74,32 +74,32 @@ const serviceComponents = [
 const formComps = [
   {
     title: "Submit Range Walks",
-    href: "/TGR/rangewalk",
+    href: "/team/rangewalk",
     description: "Submit Daily Range Walks",
   },
   {
     title: "View Range Walks & Repairs",
-    href: "/TGR/rangewalk/report",
+    href: "/team/rangewalk/report",
     description: "View All Range Walks & Repairs",
   },
   {
     title: "Points Submissions",
-    href: "/TGR/crew/points",
+    href: "/team/crew/points",
     description: "Report All Submitted Points",
   },
   {
     title: "Daily Deposits",
-    href: "/TGR/deposits",
+    href: "/team/deposits",
     description: "Submit Daily Deposits",
   },
   {
     title: "Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
   {
     title: "Rental Gun Checklist",
-    href: "/TGR/rentals/checklist",
+    href: "/team/rentals/checklist",
     description: "Daily Rental Checklist",
   },
 ];
@@ -130,13 +130,13 @@ const HeaderUser = React.memo(() => {
         <NavigationMenu>
           <NavigationMenuList className="flex space-x-4 mr-3 ml-1">
             <NavigationMenuItem>
-              <Link href="/TGR/dros/guide">
+              <Link href="/team/dros/guide">
                 <Button variant="linkHover1">DROS Guide</Button>
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <Link href="/TGR/sop">
-                <Button variant="linkHover2">TGR SOPs</Button>
+              <Link href="/team/sop">
+                <Button variant="linkHover2">Team SOPs</Button>
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
@@ -230,7 +230,7 @@ const HeaderUser = React.memo(() => {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/TGR/crew/login">
+            <Link href="/team/crew/login">
               <Button variant="linkHover2">Sign In</Button>
             </Link>
           )}

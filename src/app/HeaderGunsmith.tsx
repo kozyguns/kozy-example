@@ -21,12 +21,12 @@ import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 const schedComponents = [
   {
     title: "Calendar",
-    href: "/TGR/crew/calendar",
+    href: "/team/crew/calendar",
     description: "Check Out The Work Schedule",
   },
   {
     title: "Time Off Request",
-    href: "/TGR/crew/timeoffrequest",
+    href: "/team/crew/timeoffrequest",
     description: "Submit A Request",
   },
 ];
@@ -47,12 +47,12 @@ const serviceComponents = [
 const formComps = [
   {
     title: "Gunsmithing",
-    href: "/TGR/gunsmithing",
+    href: "/team/gunsmithing",
     description: "Weekly Firearms Maintenance",
   },
   {
     title: "Certifications",
-    href: "/TGR/certifications",
+    href: "/team/certifications",
     description: "View All Certifications",
   },
 ];
@@ -128,8 +128,8 @@ const HeaderGunsmith = React.memo(() => {
         <NavigationMenu>
           <NavigationMenuList className="flex space-x-4 mr-3 ml-1">
             <NavigationMenuItem>
-              <Link href="/TGR/sop">
-                <Button variant="linkHover2">TGR SOPs</Button>
+              <Link href="/team/sop">
+                <Button variant="linkHover2">Team SOPs</Button>
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
@@ -193,7 +193,7 @@ const HeaderGunsmith = React.memo(() => {
               >
                 Sign Out
               </Button>
-              <Link href="/TGR/crew/chat">
+              <Link href="/team/crew/chat">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -226,7 +226,7 @@ const HeaderGunsmith = React.memo(() => {
               </Link>
             </>
           ) : (
-            <Link href="/TGR/crew/login">
+            <Link href="/team/crew/login">
               <Button>Sign In</Button>
             </Link>
           )}

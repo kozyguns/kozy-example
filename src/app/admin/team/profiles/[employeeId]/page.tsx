@@ -936,25 +936,37 @@ const EmployeeProfile = () => {
       default:
         return;
     }
-
+  
     if (!employeeId || noteContent.trim() === "") return;
-
+  
     const employeeName = await fetchEmployeeNameByUserUUID(user.id);
     if (!employeeName) return;
-
+  
+    // Fetch the employee_id from the employees table
+    const { data: employeeData, error: employeeError } = await supabase
+      .from("employees")
+      .select("employee_id")
+      .eq("user_uuid", user.id)
+      .single();
+  
+    if (employeeError) {
+      console.error("Error fetching employee data:", employeeError);
+      return;
+    }
+  
     const { data, error } = await supabase
       .from("employee_profile_notes")
       .insert([
         {
           profile_employee_id: employeeId,
-          employee_id: parseInt(user.id, 10),
+          employee_id: employeeData.employee_id, // Use the fetched employee_id
           note: noteContent,
           type,
           created_by: employeeName,
         },
       ])
       .select();
-
+  
     if (error) {
       console.error("Error adding note:", error);
     } else if (data) {
@@ -979,7 +991,7 @@ const EmployeeProfile = () => {
               status: noteContent.split(" ").slice(1).join(" "),
               created_by: data[0].created_by,
               created_at: data[0].created_at,
-              employee_id: employeeId, // Add employee_id here
+              employee_id: employeeId,
             },
           ]);
           break;
@@ -1230,7 +1242,7 @@ const EmployeeProfile = () => {
             <div className="flex items-center gap-4">
               <Avatar>
                 <img
-                  src={employee.avatar_url || "/Banner.png"}
+                  src={employee.avatar_url || "/ahr.png"}
                   alt="Employee Avatar"
                 />
                 <AvatarFallback>{employee.name[0]}</AvatarFallback>

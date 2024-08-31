@@ -57,7 +57,7 @@ export const AdminSubmitAuditsCard = () => (
 
 export const DrosGuidanceCard = () => (
   <>
-    <Link className="group" href="/TGR/dros/guide">
+    <Link className="group" href="/team/dros/guide">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <LightningBoltIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -75,7 +75,7 @@ export const DrosGuidanceCard = () => (
 
 export const CalendarCard = () => (
   <>
-    <Link className="group" href="/TGR/crew/calendar">
+    <Link className="group" href="/team/crew/calendar">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <CalendarIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -93,7 +93,7 @@ export const CalendarCard = () => (
 
 export const TimeOffRequestCard = () => (
   <>
-    <Link className="group" href="/TGR/crew/timeoffrequest">
+    <Link className="group" href="/team/crew/timeoffrequest">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <ClockIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -201,7 +201,7 @@ export const OrderCard = () => (
 
 export const DepositsCard = () => (
   <>
-    <Link className="group" href="/TGR/deposits">
+    <Link className="group" href="/team/deposits">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <DollarSignIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -255,7 +255,7 @@ export const AdminWaiverReviewCard = () => (
 
 export const RangeWalkCard = () => (
   <>
-    <Link className="group" href="/TGR/rangewalk">
+    <Link className="group" href="/team/rangewalk">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <EyeOpenIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -273,7 +273,7 @@ export const RangeWalkCard = () => (
 
 export const RangeRepairCard = () => (
   <>
-    <Link className="group" href="/TGR/rangerepairs">
+    <Link className="group" href="/team/rangerepairs">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <EyeOpenIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -291,11 +291,11 @@ export const RangeRepairCard = () => (
 
 export const SOPCard = () => (
   <>
-    <Link className="group" href="/TGR/sop">
+    <Link className="group" href="/team/sop">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <FileTextIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
-          <CardTitle>TGR SOPs</CardTitle>
+          <CardTitle>Team SOPs</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-gray-500 dark:text-gray-400 text-center">
@@ -327,7 +327,7 @@ export const AdminSOPCard = () => (
 
 export const PointsCard = () => (
   <>
-    <Link className="group" href="/TGR/crew/points">
+    <Link className="group" href="/team/crew/points">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <FileTextIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />
@@ -363,7 +363,7 @@ export const CrewOrdersCard = () => (
 
 export const GunsmithingCard = () => (
   <>
-    <Link className="group" href="/TGR/gunsmithing">
+    <Link className="group" href="/team/gunsmithing">
       <Card>
         <CardHeader className="flex items-center gap-2">
           <CookieIcon className="h-6 w-6 text-gray-500 dark:text-gray-400" />

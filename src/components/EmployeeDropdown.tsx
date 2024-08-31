@@ -11,7 +11,7 @@ const EmployeeDropdown = ({ employees }: { employees: any[] }) => {
   const router = useRouter();
 
   const handleEmployeeSelect = (employeeId: string) => {
-    router.push(`/TGR/crew/profile/${employeeId}`);
+    router.push(`/team/crew/profile/${employeeId}`);
   };
 
   return (

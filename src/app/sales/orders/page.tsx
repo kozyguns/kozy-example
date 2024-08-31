@@ -77,14 +77,14 @@ export default function OrdersComponent() {
       if (error) {
         console.error("Error fetching user:", error.message);
         toast.error("Error fetching user. Please log in again.");
-        router.push("/TGR/crew/login");
+        router.push("/team/crew/login");
         return;
       }
       if (user) {
         setUserUuid(user.id);
       } else {
         toast.error("No active user found. Please log in.");
-        router.push("/TGR/crew/login");
+        router.push("/team/crew/login");
       }
     };
 

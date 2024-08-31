@@ -15,8 +15,8 @@ import QueryProvider from "@/components/query-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TGR",
-  description: "Everything TGR",
+  title: "AHR",
+  description: "AHR Management Portal",
 };
 
 const clientId = process.env.GOOGLE_CLIENT_ID!;
