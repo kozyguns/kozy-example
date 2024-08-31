@@ -374,20 +374,16 @@ const HeaderSuperAdmin = React.memo(() => {
   }, [fetchUserAndEmployee]);
 
   useEffect(() => {
-    const handleChatActiveChange = (event: CustomEvent) => {
-      setIsChatActive(event.detail.isActive);
+    const checkChatActive = () => {
+      const isActive = localStorage.getItem("isChatActive") === "true";
+      setIsChatActive(isActive);
     };
 
-    window.addEventListener(
-      "chatActiveChange",
-      handleChatActiveChange as EventListener
-    );
+    checkChatActive(); // Check initially
+    window.addEventListener("chatActiveChange", checkChatActive);
 
     return () => {
-      window.removeEventListener(
-        "chatActiveChange",
-        handleChatActiveChange as EventListener
-      );
+      window.removeEventListener("chatActiveChange", checkChatActive);
     };
   }, []);
 
@@ -401,12 +397,14 @@ const HeaderSuperAdmin = React.memo(() => {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "group_chat_messages" },
           (payload) => {
-            const newMessage = payload.new as ChatMessage;
-            if (
-              newMessage.sender_id !== user.id &&
-              (!newMessage.read_by || !newMessage.read_by.includes(user.id))
-            ) {
-              setTotalUnreadCount((prev) => prev + 1);
+            if (!isChatActive) {
+              const newMessage = payload.new as ChatMessage;
+              if (
+                newMessage.sender_id !== user.id &&
+                (!newMessage.read_by || !newMessage.read_by.includes(user.id))
+              ) {
+                setTotalUnreadCount((prev) => prev + 1);
+              }
             }
           }
         )
@@ -418,9 +416,11 @@ const HeaderSuperAdmin = React.memo(() => {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "direct_messages" },
           (payload) => {
-            const newMessage = payload.new as ChatMessage;
-            if (newMessage.receiver_id === user.id && !newMessage.is_read) {
-              setTotalUnreadCount((prev) => prev + 1);
+            if (!isChatActive) {
+              const newMessage = payload.new as ChatMessage;
+              if (newMessage.receiver_id === user.id && !newMessage.is_read) {
+                setTotalUnreadCount((prev) => prev + 1);
+              }
             }
           }
         )
