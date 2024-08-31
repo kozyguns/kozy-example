@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             orderBy: 'startTime',
         });
     
-        console.log('Fetched events:', response.data.items);
+        // console.log('Fetched events:', response.data.items);
         res.status(200).json({ events: response.data.items });
     } catch (error) {
         if (error instanceof Error) {

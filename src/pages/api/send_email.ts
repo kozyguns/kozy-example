@@ -5,6 +5,7 @@ import TimeOffApproved from './../../../emails/TimeOffApproved';
 import TimeOffDenied from './../../../emails/TimeOffDenied';
 import CalledOut from './../../../emails/CalledOut';
 import LeftEarly from './../../../emails/LeftEarly';
+import CustomStatus from './../../../emails/CustomStatus'; // Import the new CustomStatus template
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,10 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     const { email, subject, templateName, templateData } = req.body;
 
-    console.log('Received data:', { email, subject, templateName, templateData });
+    // console.log('Received data:', { email, subject, templateName, templateData });
 
     if (!email || !subject || !templateName) {
-      console.log('Missing fields:', { email, subject, templateName });
+      // console.log('Missing fields:', { email, subject, templateName });
       res.status(400).json({ error: 'Missing required fields', details: req.body });
       return;
     }
@@ -43,6 +44,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         case 'LeftEarly':
           emailTemplate = LeftEarly(templateData);
           break;
+        case 'CustomStatus':
+          emailTemplate = CustomStatus({
+            name: templateData.name,
+            date: templateData.date,
+            status: templateData.status || templateData.customMessage // Use status or customMessage, whichever is provided
+          });
+          break;
         default:
           throw new Error('Invalid template name');
       }
@@ -54,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         react: emailTemplate,
       });
 
-      console.log('Resend response:', resendRes);
+      // console.log('Resend response:', resendRes);
 
       if (resendRes.error) {
         throw new Error(resendRes.error.message);

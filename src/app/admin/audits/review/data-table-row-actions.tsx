@@ -10,7 +10,7 @@ import {
 import { PopoverForm, SubmitFormData } from "../submit/PopoverForm";
 import { supabase } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { auditData, Task } from '../review/data-schema';
+import { auditData, Task } from "../review/data-schema";
 
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
@@ -28,17 +28,17 @@ export function DataTableRowActions<TData>({
   };
 
   const handleSubmit = async (formData: SubmitFormData) => {
-    console.log("Form submitted:", formData);
-    
+    // console.log("Form submitted:", formData);
+
     const auditId = formData.audits_id;
-    console.log("Attempting to update audit with ID:", auditId);
-  
+    // console.log("Attempting to update audit with ID:", auditId);
+
     if (!auditId) {
       console.error("No valid audit ID found");
       toast.error("Failed to update audit: Invalid ID");
       return;
     }
-  
+
     try {
       const updatePayload = {
         dros_number: formData.drosNumber,
@@ -51,14 +51,14 @@ export function DataTableRowActions<TData>({
         error_details: formData.errorDetails,
         error_notes: formData.errorNotes,
       };
-      console.log("Update payload:", updatePayload);
-  
+      // console.log("Update payload:", updatePayload);
+
       const { data, error } = await supabase
-        .from('Auditsinput')
+        .from("Auditsinput")
         .update(updatePayload)
-        .eq('audits_id', auditId)
+        .eq("audits_id", auditId)
         .select();
-  
+
       // ... rest of the function ...
     } catch (error) {
       console.error("Error updating audit:", error);
@@ -75,9 +75,9 @@ export function DataTableRowActions<TData>({
 
     try {
       const { error } = await supabase
-        .from('Auditsinput')
+        .from("Auditsinput")
         .delete()
-        .eq('audits_id', audit.audits_id);
+        .eq("audits_id", audit.audits_id);
 
       if (error) throw error;
 
@@ -101,11 +101,7 @@ export function DataTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-      <PopoverForm
-          onSubmit={handleSubmit}
-          audit={audit}
-          placeholder="Edit"
-        />
+        <PopoverForm onSubmit={handleSubmit} audit={audit} placeholder="Edit" />
         <DropdownMenuItem onSelect={handleDelete}>Delete</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
