@@ -108,7 +108,6 @@ function ChatContent() {
   const [chatType, setChatType] = useState<"dm" | "group">("dm");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
-  const [isChatActive, setIsChatActive] = useState(true);
   const debouncedSetMessages = useCallback(debounce(setMessages, 300), [
     setMessages,
   ]);
@@ -126,23 +125,6 @@ function ChatContent() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  useEffect(() => {
-    setIsChatActive(true);
-
-    // Dispatch a custom event to notify the header that the chat is active
-    window.dispatchEvent(
-      new CustomEvent("chatActiveChange", { detail: { isActive: true } })
-    );
-
-    return () => {
-      setIsChatActive(false);
-      // Dispatch a custom event to notify the header that the chat is inactive
-      window.dispatchEvent(
-        new CustomEvent("chatActiveChange", { detail: { isActive: false } })
-      );
-    };
-  }, []);
 
   // Function to handle chat type selection
   const handleChatTypeSelection = (type: "dm" | "group") => {
@@ -941,7 +923,7 @@ function ChatContent() {
         (payload) => {
           setMessagesWithoutDuplicates([payload.new]);
           // Update unread status for group chats
-          if (payload.new.sender_id !== user.id && !isChatActive) {
+          if (payload.new.sender_id !== user.id) {
             setUnreadStatus((prevStatus) => ({
               ...prevStatus,
               [`group_${payload.new.group_chat_id}`]: true,
@@ -978,7 +960,7 @@ function ChatContent() {
         async (payload) => {
           setMessagesWithoutDuplicates([payload.new]);
 
-          if (payload.new.receiver_id === user?.id && !isChatActive) {
+          if (payload.new.receiver_id === user?.id) {
             const senderId = payload.new.sender_id;
 
             if (typeof senderId === "string") {
@@ -1018,7 +1000,7 @@ function ChatContent() {
       groupChatMessageSubscription.unsubscribe();
       directMessageSubscription.unsubscribe();
     };
-  }, [user, dmUsers, unreadStatus, fetchUnreadCounts, isChatActive]);
+  }, [user, dmUsers, unreadStatus, fetchUnreadCounts]);
 
   const setMessagesWithoutDuplicates = useCallback(
     (newMessages: ChatMessage[]) => {
