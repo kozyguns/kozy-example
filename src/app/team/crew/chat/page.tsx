@@ -1278,10 +1278,11 @@ function ChatContent() {
             (newMessage.sender_id === selectedChat ||
               newMessage.receiver_id === selectedChat));
 
-        if (isCurrentChat) {
-          setMessagesWithoutDuplicates([newMessage]);
-          scrollToBottom();
-        }
+              if (isCurrentChat) {
+                setMessagesWithoutDuplicates([newMessage]); // Already deduplicates
+                scrollToBottom();
+              }
+              
 
         if (newMessage.sender_id !== user.id) {
           const isChatActiveNow =
@@ -1413,9 +1414,7 @@ useEffect(() => {
   };
 }, [
   user,
-  handleGroupChatInsert,
-  handleGroupChatUpdate,
-  handleGroupChatDelete,
+  
   handleMessageChange, // This will make sure messages are handled in real-time
   scrollToBottom // Ensures smooth scrolling when new messages are added
 ]);
