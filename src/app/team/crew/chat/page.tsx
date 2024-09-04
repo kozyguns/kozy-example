@@ -144,10 +144,6 @@ function ChatContent() {
     },
     []
   );
-  
-  
-
-  
 
   // Function to handle chat type selection
   const handleChatTypeSelection = (type: "dm" | "group") => {
@@ -269,7 +265,7 @@ function ChatContent() {
     const deletedGroupChatId = payload.old?.id;
 
     if (!deletedGroupChatId || !user) {
-      // console.log("Invalid payload or user not available");
+      console.log("Invalid payload or user not available");
       return;
     }
 
@@ -278,11 +274,11 @@ function ChatContent() {
         (chat) => chat.id !== `group_${deletedGroupChatId}`
       );
 
-      if (updatedDmUsers.length < prev.length) {
-        // console.log(`Group chat ${deletedGroupChatId} removed from dmUsers`);
-      } else {
-        // console.log(`Group chat ${deletedGroupChatId} not found in dmUsers`);
-      }
+      // if (updatedDmUsers.length < prev.length) {
+      //   console.log(`Group chat ${deletedGroupChatId} removed from dmUsers`);
+      // } else {
+      //   console.log(`Group chat ${deletedGroupChatId} not found in dmUsers`);
+      // }
 
       return updatedDmUsers;
     });
@@ -299,68 +295,55 @@ function ChatContent() {
     // console.log(`Group chat ${deletedGroupChatId} deletion handled`);
   };
 
+  // const fetchGroupChats = async () => {
+  //   if (!user || !user.id) {
+  //     console.error("User or user.id is not available");
+  //     return;
+  //   }
 
-  const fetchGroupChats = async () => {
-    if (!user || !user.id) {
-      // console.error("User or user.id is not available");
-      return;
-    }
+  //   const { data: groupChats, error } = await supabase
+  //     .from("group_chats")
+  //     .select("*")
+  //     .filter("users", "cs", `{${user.id}}`);
 
-    const { data: groupChats, error } = await supabase
-      .from("group_chats")
-      .select("*")
-      .filter("users", "cs", `{${user.id}}`);
+  //   if (error) {
+  //     console.error("Error fetching group chats:", error.message);
+  //   } else if (groupChats) {
+  //     setDmUsers((prev) => {
+  //       const existingGroupChatIds = prev
+  //         .filter((u) => u.id.startsWith("group_"))
+  //         .map((u) => u.id);
 
-    if (error) {
-      // console.error("Error fetching group chats:", error.message);
-    } else if (groupChats) {
-      setDmUsers((prev) => {
-        const existingGroupChatIds = prev
-          .filter((u) => u.id.startsWith("group_"))
-          .map((u) => u.id);
+  //       const newGroupChats = groupChats
+  //         .filter((chat) => !existingGroupChatIds.includes(`group_${chat.id}`))
+  //         .map((chat) => ({
+  //           id: `group_${chat.id}`,
+  //           name: chat.name,
+  //           is_online: true,
+  //           users: chat.users,
+  //           created_by: chat.created_by,
+  //         }));
 
-        const newGroupChats = groupChats
-          .filter((chat) => !existingGroupChatIds.includes(`group_${chat.id}`))
-          .map((chat) => ({
-            id: `group_${chat.id}`,
-            name: chat.name,
-            is_online: true,
-            users: chat.users,
-            created_by: chat.created_by,
-          }));
+  //       return [...prev, ...newGroupChats];
+  //     });
+  //   }
+  // };
 
-        return [...prev, ...newGroupChats];
-      });
-    }
-    };
+  // useEffect(() => {
+  //   if (user && user.id) {
+  //     fetchGroupChats();
 
+  //     const handleFocus = () => {
+  //       fetchGroupChats();
+  //     };
 
+  //     window.addEventListener("focus", handleFocus);
 
-
-
-
-
-
-
-  
-  
-
-
-  useEffect(() => {
-    if (user && user.id) {
-      fetchGroupChats();
-
-      const handleFocus = () => {
-        fetchGroupChats();
-      };
-
-      window.addEventListener("focus", handleFocus);
-
-      return () => {
-        window.removeEventListener("focus", handleFocus);
-      };
-    }
-  }, [user]);
+  //     return () => {
+  //       window.removeEventListener("focus", handleFocus);
+  //     };
+  //   }
+  // }, [user]);
 
   useEffect(() => {
     const fetchAllChats = async () => {
@@ -493,23 +476,23 @@ function ChatContent() {
         ]);
 
         // Fetch initial messages for all group chats
-        for (const groupChat of groupChats) {
-          const { data: groupMessages, error: groupMessagesError } =
-            await supabase
-              .from("group_chat_messages")
-              .select("*")
-              .eq("group_chat_id", groupChat.id)
-              .order("created_at", { ascending: true });
+        // for (const groupChat of groupChats) {
+        //   const { data: groupMessages, error: groupMessagesError } =
+        //     await supabase
+        //       .from("group_chat_messages")
+        //       .select("*")
+        //       .eq("group_chat_id", groupChat.id)
+        //       .order("created_at", { ascending: true });
 
-          if (groupMessagesError) {
-            console.error(
-              "Error fetching group messages:",
-              groupMessagesError.message
-            );
-          } else if (groupMessages) {
-            setMessagesWithoutDuplicates(groupMessages);
-          }
-        }
+        //   if (groupMessagesError) {
+        //     console.error(
+        //       "Error fetching group messages:",
+        //       groupMessagesError.message
+        //     );
+        //   } else if (groupMessages) {
+        //     setMessagesWithoutDuplicates(groupMessages);
+        //   }
+        // }
       }
 
       // Fetch other users (admins, super admins, etc.)
@@ -562,212 +545,209 @@ function ChatContent() {
     };
   }, [user, setMessagesWithoutDuplicates]);
 
-  useEffect(() => {
-    const client = supabase;
+  // useEffect(() => {
+  //   const client = supabase;
 
-    const setupSubscriptions = () => {
-      if (!channel.current) {
-        channel.current = client.channel("chat-room", {
-          config: {
-            broadcast: {
-              self: true,
-            },
-          },
-        });
+  //   const setupSubscriptions = () => {
+  //     if (!channel.current) {
+  //       channel.current = client.channel("chat-room", {
+  //         config: {
+  //           broadcast: {
+  //             self: true,
+  //           },
+  //         },
+  //       });
 
-        channel.current
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "chat_messages" },
-            (payload) => {
-              setMessages((prev) => [...prev, payload.new]);
-            }
-          )
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "DELETE", schema: "public", table: "chat_messages" },
-            (payload) => {
-              setMessages((prev) =>
-                prev.filter((msg) => msg.id !== payload.old.id)
-              );
-            }
-          )
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "UPDATE", schema: "public", table: "chat_messages" },
-            (payload) => {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === payload.new.id ? payload.new : msg
-                )
-              );
-            }
-          )
-          .subscribe();
-      }
+  //       channel.current
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "INSERT", schema: "public", table: "chat_messages" },
+  //           (payload) => {
+  //             setMessages((prev) => [...prev, payload.new]);
+  //           }
+  //         )
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "DELETE", schema: "public", table: "chat_messages" },
+  //           (payload) => {
+  //             setMessages((prev) =>
+  //               prev.filter((msg) => msg.id !== payload.old.id)
+  //             );
+  //           }
+  //         )
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "UPDATE", schema: "public", table: "chat_messages" },
+  //           (payload) => {
+  //             setMessages((prev) =>
+  //               prev.map((msg) =>
+  //                 msg.id === payload.new.id ? payload.new : msg
+  //               )
+  //             );
+  //           }
+  //         )
+  //         .subscribe();
+  //     }
 
-      if (!directMessageChannelRef.current) {
-        directMessageChannelRef.current = client
-          .channel("direct-messages", {
-            config: {
-              broadcast: {
-                self: true,
-              },
-            },
-          })
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "direct_messages" },
-            async (payload) => {
-              setMessages((prev) => {
-                // Check if the message already exists in the state
-                if (prev.some((msg) => msg.id === payload.new.id)) {
-                  return prev;
-                }
-                return [...prev, payload.new];
-              });
+  //     if (!directMessageChannelRef.current) {
+  //       directMessageChannelRef.current = client
+  //         .channel("direct-messages", {
+  //           config: {
+  //             broadcast: {
+  //               self: true,
+  //             },
+  //           },
+  //         })
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "INSERT", schema: "public", table: "direct_messages" },
+  //           async (payload) => {
+  //             setMessages((prev) => {
+  //               // Check if the message already exists in the state
+  //               if (prev.some((msg) => msg.id === payload.new.id)) {
+  //                 return prev;
+  //               }
+  //               return [...prev, payload.new];
+  //             });
 
-              if (payload.new.receiver_id === userDataRef.current?.user?.id) {
-                const senderId = payload.new.sender_id;
+  //             if (payload.new.receiver_id === userDataRef.current?.user?.id) {
+  //               const senderId = payload.new.sender_id;
 
-                if (typeof senderId === "string") {
-                  setUnreadStatus((prevStatus) => ({
-                    ...prevStatus,
-                    [senderId]: true,
-                  }));
+  //               if (typeof senderId === "string") {
+  //                 setUnreadStatus((prevStatus) => ({
+  //                   ...prevStatus,
+  //                   [senderId]: true,
+  //                 }));
 
-                  if (!dmUsers.some((u) => u.id === senderId)) {
-                    await fetchSender(senderId);
-                  }
-                }
-              }
-            }
-          )
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "DELETE", schema: "public", table: "direct_messages" },
-            (payload) => {
-              setMessages((prev) =>
-                prev.filter((msg) => msg.id !== payload.old.id)
-              );
-            }
-          )
-          .on<ChatMessage>(
-            "postgres_changes",
-            { event: "UPDATE", schema: "public", table: "direct_messages" },
-            (payload) => {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === payload.new.id ? payload.new : msg
-                )
-              );
-            }
-          )
-          .subscribe();
-      }
+  //                 if (!dmUsers.some((u) => u.id === senderId)) {
+  //                   await fetchSender(senderId);
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         )
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "DELETE", schema: "public", table: "direct_messages" },
+  //           (payload) => {
+  //             setMessages((prev) =>
+  //               prev.filter((msg) => msg.id !== payload.old.id)
+  //             );
+  //           }
+  //         )
+  //         .on<ChatMessage>(
+  //           "postgres_changes",
+  //           { event: "UPDATE", schema: "public", table: "direct_messages" },
+  //           (payload) => {
+  //             setMessages((prev) =>
+  //               prev.map((msg) =>
+  //                 msg.id === payload.new.id ? payload.new : msg
+  //               )
+  //             );
+  //           }
+  //         )
+  //         .subscribe();
+  //     }
 
-      if (!presenceChannel.current) {
-        presenceChannel.current = client
-          .channel("presence-channel")
-          .on(
-            "postgres_changes",
-            { event: "UPDATE", schema: "public", table: "employees" },
-            (payload) => {
-              const updatedUser = payload.new;
-              setUsers((prevUsers) =>
-                prevUsers.map((user) =>
-                  user.id === updatedUser.user_uuid
-                    ? { ...user, is_online: updatedUser.is_online }
-                    : user
-                )
-              );
-            }
-          )
-          .on(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "employees" },
-            (payload) => {
-              const newUser = payload.new;
-              setUsers((prevUsers) => [
-                ...prevUsers,
-                {
-                  id: newUser.user_uuid,
-                  name: newUser.name,
-                  is_online: newUser.is_online,
-                },
-              ]);
-            }
-          )
-          .on(
-            "postgres_changes",
-            { event: "DELETE", schema: "public", table: "employees" },
-            (payload) => {
-              const deletedUser = payload.old;
-              setUsers((prevUsers) =>
-                prevUsers.filter((user) => user.id !== deletedUser.user_uuid)
-              );
-            }
-          )
-          .subscribe();
-      }
-    };
+  //     if (!presenceChannel.current) {
+  //       presenceChannel.current = client
+  //         .channel("presence-channel")
+  //         .on(
+  //           "postgres_changes",
+  //           { event: "UPDATE", schema: "public", table: "employees" },
+  //           (payload) => {
+  //             const updatedUser = payload.new;
+  //             setUsers((prevUsers) =>
+  //               prevUsers.map((user) =>
+  //                 user.id === updatedUser.user_uuid
+  //                   ? { ...user, is_online: updatedUser.is_online }
+  //                   : user
+  //               )
+  //             );
+  //           }
+  //         )
+  //         .on(
+  //           "postgres_changes",
+  //           { event: "INSERT", schema: "public", table: "employees" },
+  //           (payload) => {
+  //             const newUser = payload.new;
+  //             setUsers((prevUsers) => [
+  //               ...prevUsers,
+  //               {
+  //                 id: newUser.user_uuid,
+  //                 name: newUser.name,
+  //                 is_online: newUser.is_online,
+  //               },
+  //             ]);
+  //           }
+  //         )
+  //         .on(
+  //           "postgres_changes",
+  //           { event: "DELETE", schema: "public", table: "employees" },
+  //           (payload) => {
+  //             const deletedUser = payload.old;
+  //             setUsers((prevUsers) =>
+  //               prevUsers.filter((user) => user.id !== deletedUser.user_uuid)
+  //             );
+  //           }
+  //         )
+  //         .subscribe();
+  //     }
+  //   };
 
-    if (!groupChatChannelRef.current) {
-      groupChatChannelRef.current = client
-        .channel("group-chats")
-        .on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "group_chats" },
-          (payload) => {
-            const newGroupChat = payload.new;
-            handleGroupChatInsert({ new: newGroupChat } as GroupChatPayload);
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "group_chats" },
-          (payload) => {
-            const updatedGroupChat = payload.new;
-            handleGroupChatUpdate({
-              new: updatedGroupChat,
-            } as GroupChatPayload);
-          }
-        )
-        .on(
-          "postgres_changes",
-          { event: "DELETE", schema: "public", table: "group_chats" },
-          (payload) => {
-            const deletedGroupChat = payload.old;
-            handleGroupChatDelete({
-              old: deletedGroupChat,
-            } as GroupChatPayload);
-          }
-        )
-        .subscribe();
-    }
+  //   if (!groupChatChannelRef.current) {
+  //     groupChatChannelRef.current = client
+  //       .channel("group-chats")
+  //       .on(
+  //         "postgres_changes",
+  //         { event: "INSERT", schema: "public", table: "group_chats" },
+  //         (payload) => {
+  //           const newGroupChat = payload.new;
+  //           handleGroupChatInsert({ new: newGroupChat } as GroupChatPayload);
+  //         }
+  //       )
+  //       .on(
+  //         "postgres_changes",
+  //         { event: "UPDATE", schema: "public", table: "group_chats" },
+  //         (payload) => {
+  //           const updatedGroupChat = payload.new;
+  //           handleGroupChatUpdate({
+  //             new: updatedGroupChat,
+  //           } as GroupChatPayload);
+  //         }
+  //       )
+  //       .on(
+  //         "postgres_changes",
+  //         { event: "DELETE", schema: "public", table: "group_chats" },
+  //         (payload) => {
+  //           const deletedGroupChat = payload.old;
+  //           handleGroupChatDelete({
+  //             old: deletedGroupChat,
+  //           } as GroupChatPayload);
+  //         }
+  //       )
+  //       .subscribe();
+  //   }
 
-    setupSubscriptions();
+  //   setupSubscriptions();
 
-    return () => {
-      channel.current?.unsubscribe();
-      channel.current = null;
-      presenceChannel.current?.unsubscribe();
-      presenceChannel.current = null;
-      directMessageChannelRef.current?.unsubscribe();
-      directMessageChannelRef.current = null;
-      groupChatChannelRef.current?.unsubscribe();
-      groupChatChannelRef.current = null;
-    };
-  }, [dmUsers, unreadStatus, user]);
-
+  //   return () => {
+  //     channel.current?.unsubscribe();
+  //     channel.current = null;
+  //     presenceChannel.current?.unsubscribe();
+  //     presenceChannel.current = null;
+  //     directMessageChannelRef.current?.unsubscribe();
+  //     directMessageChannelRef.current = null;
+  //     groupChatChannelRef.current?.unsubscribe();
+  //     groupChatChannelRef.current = null;
+  //   };
+  // }, [dmUsers, unreadStatus, user]);
 
   useEffect(() => {
     if (dmUsers.length > 0 && selectedChat) {
       handleChatClick(selectedChat);
     }
   }, [dmUsers, selectedChat]);
-
-
 
   const handleEditGroupName = async (groupId: string, newName: string) => {
     const groupChatId = parseInt(groupId.split("_")[1], 10);
@@ -818,10 +798,6 @@ function ChatContent() {
     };
   }, []);
 
-
-
-
-
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -834,9 +810,9 @@ function ChatContent() {
       console.warn("Cannot send message:", { message, selectedChat });
       return;
     }
-  
+
     const client = supabase;
-  
+
     const commonMessageData = {
       message,
       sender_id: user.id,
@@ -844,10 +820,10 @@ function ChatContent() {
       is_read: false,
       read_by: [user.id],
     };
-  
+
     let insertData;
     let tableName;
-  
+
     if (selectedChat === "Admin Chat") {
       insertData = {
         ...commonMessageData,
@@ -870,21 +846,21 @@ function ChatContent() {
       };
       tableName = "direct_messages";
     }
-  
+
     const { data, error } = await client.from(tableName).insert([insertData]);
-  
+
     if (error) {
       console.error("Error inserting message:", error.message);
       return;
     }
-  
+
     if (data) {
       setMessagesWithoutDuplicates([...messages, data[0]]);
       setMessages((prevMessages) => [...prevMessages, data[0]]);
       setMessage(""); // Clear the message input
       scrollToBottom();
     }
-  
+
     // Clear the message input and scroll to bottom
     setMessage("");
     scrollToBottom();
@@ -1128,21 +1104,21 @@ function ChatContent() {
 
   // Filter messages to avoid duplicates
   const filteredMessages = selectedChat
-  ? messages.filter((msg) => {
-      if (selectedChat === "Admin Chat") {
-        return !msg.receiver_id && !msg.group_chat_id;
-      }
+    ? messages.filter((msg) => {
+        if (selectedChat === "Admin Chat") {
+          return !msg.receiver_id && !msg.group_chat_id;
+        }
 
-      if (selectedChat.startsWith("group_")) {
-        return msg.group_chat_id === parseInt(selectedChat.split("_")[1], 10);
-      }
+        if (selectedChat.startsWith("group_")) {
+          return msg.group_chat_id === parseInt(selectedChat.split("_")[1], 10);
+        }
 
-      return (
-        (msg.sender_id === user.id && msg.receiver_id === selectedChat) ||
-        (msg.sender_id === selectedChat && msg.receiver_id === user.id)
-      );
-    })
-  : [];
+        return (
+          (msg.sender_id === user.id && msg.receiver_id === selectedChat) ||
+          (msg.sender_id === selectedChat && msg.receiver_id === user.id)
+        );
+      })
+    : [];
 
   const getUserName = (userId: string | undefined) => {
     if (!userId) return "Unknown User";
@@ -1151,6 +1127,8 @@ function ChatContent() {
   };
 
   const fetchSender = async (senderId: string) => {
+    if (dmUsers.some((user) => user.id === senderId)) return;
+
     const { data: senderData, error: senderError } = await supabase
       .from("employees")
       .select("user_uuid, name, is_online")
@@ -1231,15 +1209,23 @@ function ChatContent() {
   }, [user, supabase]);
 
   const fetchGroupChatDetails = async (groupChatId: number) => {
+    const existingGroupChat = dmUsers.find(
+      (chat) => chat.id === `group_${groupChatId}`
+    );
+    if (existingGroupChat) return; // If the chat already exists, do not fetch again
+  
     const { data: groupChat, error } = await supabase
       .from("group_chats")
       .select("*")
       .eq("id", groupChatId)
       .single();
-
+  
     if (error) {
       console.error("Error fetching group chat details:", error.message);
-    } else if (groupChat) {
+      return;
+    }
+  
+    if (groupChat) {
       const userMap = await fetchGroupChatUsers(groupChat.users);
       setDmUsers((prev) => [
         ...prev,
@@ -1253,6 +1239,7 @@ function ChatContent() {
       ]);
     }
   };
+  
 
   // Add this function if it's not already defined in your component
   const fetchGroupChatUsers = async (userIds: string[]) => {
@@ -1272,19 +1259,16 @@ function ChatContent() {
     }, {});
   };
 
- 
-  
-    
-  
-    // localStorage.setItem("isChatActive", "true");
-    // window.dispatchEvent(new Event("chatActiveChange"));
-  
-    // markMessagesAsRead();
-    // fetchUnreadCounts();
-  
-    const handleMessageChange = useCallback((payload: any, chatType: string) => {
+  // localStorage.setItem("isChatActive", "true");
+  // window.dispatchEvent(new Event("chatActiveChange"));
+
+  // markMessagesAsRead();
+  // fetchUnreadCounts();
+
+  const handleMessageChange = useCallback(
+    (payload: any, chatType: string) => {
       // console.log(`${chatType} message change:`, payload);
-      
+
       if (payload.eventType === "INSERT") {
         const newMessage = payload.new;
         const isCurrentChat =
@@ -1293,15 +1277,16 @@ function ChatContent() {
           (chatType === "direct" &&
             (newMessage.sender_id === selectedChat ||
               newMessage.receiver_id === selectedChat));
-    
+
         if (isCurrentChat) {
           setMessagesWithoutDuplicates([newMessage]);
           scrollToBottom();
         }
-    
+
         if (newMessage.sender_id !== user.id) {
-          const isChatActiveNow = localStorage.getItem("isChatActive") === "true";
-          
+          const isChatActiveNow =
+            localStorage.getItem("isChatActive") === "true";
+
           if (!isChatActiveNow) {
             if (chatType === "group") {
               const groupChatId = `group_${newMessage.group_chat_id}`;
@@ -1314,11 +1299,14 @@ function ChatContent() {
                 [groupChatId]: (prevCounts[groupChatId] || 0) + 1,
               }));
               setTotalUnreadCount((prev) => prev + 1);
-    
+
               if (!dmUsers.some((u) => u.id === groupChatId)) {
                 fetchGroupChatDetails(newMessage.group_chat_id);
               }
-            } else if (chatType === "direct" && newMessage.receiver_id === user.id) {
+            } else if (
+              chatType === "direct" &&
+              newMessage.receiver_id === user.id
+            ) {
               const senderId = newMessage.sender_id;
               if (typeof senderId === "string") {
                 setUnreadStatus((prevStatus) => ({
@@ -1330,151 +1318,108 @@ function ChatContent() {
                   [senderId]: (prevCounts[senderId] || 0) + 1,
                 }));
                 setTotalUnreadCount((prev) => prev + 1);
-    
+
                 if (!dmUsers.some((u) => u.id === senderId)) {
                   fetchSender(senderId);
                 }
               }
             }
-            fetchUnreadCounts();
+            // fetchUnreadCounts();
           }
         }
       } else if (payload.eventType === "DELETE") {
-        setMessages((prev) =>
-          prev.filter((msg) => msg.id !== payload.old.id)
-        );
+        setMessages((prev) => prev.filter((msg) => msg.id !== payload.old.id));
       } else if (payload.eventType === "UPDATE") {
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === payload.new.id ? payload.new : msg
-          )
+          prev.map((msg) => (msg.id === payload.new.id ? payload.new : msg))
         );
       }
-    }, [selectedChat, user?.id, dmUsers, fetchGroupChatDetails, fetchSender, fetchUnreadCounts, scrollToBottom, setMessagesWithoutDuplicates, setMessages, setUnreadStatus, setUnreadCounts, setTotalUnreadCount]);
+    },
+    [
+      selectedChat,
+      user?.id,
+      dmUsers,
+      fetchGroupChatDetails,
+      fetchSender,
+    
+      scrollToBottom,
+      setMessagesWithoutDuplicates,
+      setMessages,
+      setUnreadStatus,
+      setUnreadCounts,
+      setTotalUnreadCount,
+    ]
+  );
+  
 useEffect(() => {
   if (!user) return;
 
-  const markMessagesAsRead = async () => {
-    try {
-      // Mark direct messages as read
-      const { error: dmError } = await supabase
-        .from("direct_messages")
-        .update({ is_read: true })
-        .eq("receiver_id", user.id)
-        .eq("is_read", false);
-
-      if (dmError) {
-        console.error("Error marking direct messages as read:", dmError);
-      }
-
-      // Mark group messages as read
-      const { data: groupChats, error: groupChatsError } = await supabase
-        .from("group_chats")
-        .select("id")
-        .contains("users", [user.id]);
-
-      if (groupChatsError) {
-        console.error("Error fetching group chats:", groupChatsError);
-      } else if (groupChats) {
-        for (const chat of groupChats) {
-          const { error: groupMsgError } = await supabase
-            .from("group_chat_messages")
-            .update({
-              read_by: supabase.rpc("array_append", {
-                arr: "read_by",
-                elem: user.id,
-              }),
-            })
-            .eq("group_chat_id", chat.id)
-            .not("read_by", "cs", `{${user.id}}`);
-
-          if (groupMsgError) {
-            console.error(
-              `Error marking messages as read for group ${chat.id}:`,
-              groupMsgError
-            );
-          }
-        }
-      }
-
-      // Reset unread counts
-      // setUnreadCounts({});
-      // setTotalUnreadCount(0);
-    } catch (err) {
-      console.error("Error during markMessagesAsRead:", err);
+  // Handle group chat changes (Insert, Update, Delete)
+  const handleGroupChatChange = (payload: any) => {
+    switch (payload.eventType) {
+      case "INSERT":
+        handleGroupChatInsert(payload);
+        break;
+      case "UPDATE":
+        handleGroupChatUpdate(payload);
+        break;
+      case "DELETE":
+        handleGroupChatDelete(payload);
+        break;
+      default:
+        break;
     }
   };
 
-    const handleGroupChatChange = (payload: any) => {
-      // console.log("Group chat change:", payload);
-      if (payload.eventType === "INSERT") {
-        handleGroupChatInsert(payload);
-      } else if (payload.eventType === "UPDATE") {
-        handleGroupChatUpdate(payload);
-      } else if (payload.eventType === "DELETE") {
-        handleGroupChatDelete(payload);
-      }
-    };
-  
-    // Use handleGroupChatChange for specific group chat changes if needed
-    const groupChatChangeSubscription = supabase
-      .channel("group_chat_changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "group_chats" },
-        handleGroupChatChange
-      )
-      .subscribe();
-  
+  // Subscribe to group chat messages
+  const groupChatMessageSubscription = supabase
+    .channel("group_chat_messages")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "group_chat_messages" },
+      (payload) => handleMessageChange(payload, "group")
+    )
+    .subscribe();
 
-  
-    const groupChatMessageSubscription = supabase
-      .channel("group_chat_messages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "group_chat_messages" },
-        (payload) => handleMessageChange(payload, "group")
-      )
-      .subscribe();
-  
-    const directMessageSubscription = supabase
-      .channel("direct_messages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "direct_messages" },
-        (payload) => handleMessageChange(payload, "direct")
-      )
-      .subscribe();
-  
-    return () => {
-      localStorage.setItem("isChatActive", "false");
-      window.dispatchEvent(new Event("chatActiveChange"));
-      groupChatChangeSubscription.unsubscribe(); // Ensure unsubscribing
-      // adminChatSubscription.unsubscribe();
-      groupChatMessageSubscription.unsubscribe();
-      directMessageSubscription.unsubscribe();
-    };
-  }, [
-    user,
-    dmUsers,
-    unreadStatus,
-    fetchUnreadCounts,
-    setMessagesWithoutDuplicates,
-    setMessages,
-    setUnreadStatus,
-    setUnreadCounts,
-    setTotalUnreadCount,
-    handleGroupChatInsert,
-    handleGroupChatUpdate,
-    handleGroupChatDelete,
-    fetchGroupChatDetails,
-    fetchGroupChatUsers,
-    selectedChat,
-    scrollToBottom,
-    handleMessageChange, // Add this to the dependency array
-  ]);
-  
-  
+  // Subscribe to direct messages
+  const directMessageSubscription = supabase
+    .channel("direct_messages")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "direct_messages" },
+      (payload) => handleMessageChange(payload, "direct")
+    )
+    .subscribe();
+
+  // Subscribe to group chat changes (Insert, Update, Delete)
+  const groupChatSubscription = supabase
+    .channel("group_chats")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "group_chats" },
+      handleGroupChatChange
+    )
+    .subscribe();
+
+  // Cleanup subscriptions when component unmounts or dependencies change
+  return () => {
+    groupChatMessageSubscription.unsubscribe();
+    directMessageSubscription.unsubscribe();
+    groupChatSubscription.unsubscribe();
+
+    // Reset chat activity status
+    localStorage.setItem("isChatActive", "false");
+    window.dispatchEvent(new Event("chatActiveChange"));
+  };
+}, [
+  user,
+  handleGroupChatInsert,
+  handleGroupChatUpdate,
+  handleGroupChatDelete,
+  handleMessageChange, // This will make sure messages are handled in real-time
+  scrollToBottom // Ensures smooth scrolling when new messages are added
+]);
+
 
   const handleChatClick = useCallback(
     async (chatId: string) => {
@@ -1482,41 +1427,44 @@ useEffect(() => {
         console.error("User is not defined");
         return;
       }
-  
+
       if (selectedChat === chatId) {
         return; // Prevent re-fetching if the selected chat is already the current one
       }
-  
+
       // Immediately set the selected chat
       setSelectedChat(chatId);
-  
+
       // Reset unread status for the selected chat
       if (unreadStatus[chatId]) {
         setUnreadStatus((prevStatus) => ({
           ...prevStatus,
           [chatId]: false,
         }));
-  
+
         const tableName = chatId.startsWith("group_")
           ? "group_chat_messages"
           : "direct_messages";
         const condition = chatId.startsWith("group_")
           ? `group_chat_id.eq.${chatId.split("_")[1]}`
           : `or(receiver_id.eq.${chatId},sender_id.eq.${chatId})`;
-  
+
         // Mark messages as read in the database
         const { data: messagesToUpdate, error: fetchError } = await supabase
           .from(tableName)
           .select("id, read_by")
           .or(condition);
-  
+
         if (fetchError) {
-          console.error("Error fetching messages to update:", fetchError.message);
+          console.error(
+            "Error fetching messages to update:",
+            fetchError.message
+          );
         } else {
           const messageIdsToUpdate = messagesToUpdate
             .filter((msg) => !msg.read_by || !msg.read_by.includes(user.id))
             .map((msg) => msg.id);
-  
+
           if (messageIdsToUpdate.length > 0) {
             for (const messageId of messageIdsToUpdate) {
               const { error: updateError } = await supabase
@@ -1529,7 +1477,7 @@ useEffect(() => {
                   ],
                 })
                 .eq("id", messageId);
-  
+
               if (updateError) {
                 console.error(
                   "Error updating messages as read:",
@@ -1540,7 +1488,7 @@ useEffect(() => {
           }
         }
       }
-  
+
       // Ensure the receiver's nav list updates to show the new DM or group chat
       if (!dmUsers.some((u) => u.id === chatId)) {
         if (chatId.startsWith("group_")) {
@@ -1552,7 +1500,7 @@ useEffect(() => {
             .select("user_uuid, name, is_online")
             .eq("user_uuid", chatId)
             .single();
-  
+
           if (userData) {
             setDmUsers((prev) => [
               ...prev,
@@ -1567,11 +1515,11 @@ useEffect(() => {
           }
         }
       }
-  
+
       // Fetch messages for the selected chat
       let messagesData: any[] = [];
       let messagesError;
-  
+
       try {
         if (chatId.startsWith("group_")) {
           const groupChatId = parseInt(chatId.split("_")[1], 10);
@@ -1602,24 +1550,29 @@ useEffect(() => {
           messagesError = new Error("Unexpected error occurred");
         }
       }
-  
+
       if (messagesError) {
         console.error("Error fetching messages:", messagesError.message);
         return;
       }
-  
+
       setMessagesWithoutDuplicates(messagesData);
       // scrollToBottom(); // Ensure scroll to bottom is called here
-  
+
       // Store the current chat ID in localStorage
       localStorage.setItem("currentChat", chatId);
     },
-    [dmUsers, unreadStatus, user, selectedChat, setMessagesWithoutDuplicates, setUnreadStatus, setSelectedChat, scrollToBottom]
+    [
+      dmUsers,
+      unreadStatus,
+      user,
+      selectedChat,
+      setMessagesWithoutDuplicates,
+      setUnreadStatus,
+      setSelectedChat,
+      scrollToBottom,
+    ]
   );
-
-  
-  
-
 
   return (
     <>
