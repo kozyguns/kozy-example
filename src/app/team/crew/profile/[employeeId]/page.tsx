@@ -411,29 +411,38 @@ const EmployeeProfilePage = () => {
   // Function to fetch the current shift
   const fetchCurrentShift = async () => {
     const eventDate = format(new Date(), "yyyy-MM-dd");
-
-    const { data, error } = await supabase
-      .from("employee_clock_events")
-      .select("*")
-      .eq("employee_id", employeeId)
-      .eq("event_date", eventDate)
-      .single();
-
-    if (error && error.code !== "PGRST116") {
+  
+    try {
+      const { data, error } = await supabase
+        .from("employee_clock_events")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .eq("event_date", eventDate)
+        .single()
+        .throwOnError();
+  
+      if (data) {
+        setIsClockedIn(!!data.start_time && !data.end_time);
+        setOnLunchBreak(!!data.lunch_start && !data.lunch_end && !data.end_time);
+        setClockInTime(
+          data.start_time ? new Date(`1970-01-01T${data.start_time}Z`) : null
+        );
+        setCurrentShift(data);
+      } else {
+        // If no current shift exists, assume the user is not clocked in
+        setIsClockedIn(false);
+        setOnLunchBreak(false);
+        setClockInTime(null);
+        setCurrentShift(null);
+      }
+    } catch (error) {
       console.error("Error fetching current shift:", error);
-    } else if (data) {
-      setIsClockedIn(!!data.start_time && !data.end_time);
-      setOnLunchBreak(!!data.lunch_start && !data.lunch_end && !data.end_time);
-      setClockInTime(
-        data.start_time ? new Date(`1970-01-01T${data.start_time}Z`) : null
-      );
-      setCurrentShift(data);
-    } else {
-      // If no current shift exists, assume the user is not clocked in
-      setIsClockedIn(false);
-      setOnLunchBreak(false);
-      setClockInTime(null);
-      setCurrentShift(null);
+      // Log additional error details
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      // Handle the error appropriately (e.g., show an error message to the user)
     }
   };
 
