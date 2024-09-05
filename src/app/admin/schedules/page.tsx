@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toZonedTime, format as formatTZ } from "date-fns-tz";
 import { TimesheetPagination } from "./TimesheetPagination";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
 
 interface ScheduleData {
   id: number;
@@ -118,6 +119,7 @@ const timesheetColumns: ColumnDef<TimesheetData>[] = [
 ];
 
 const ManageSchedules = () => {
+  const [actualSchedules, setActualSchedules] = useState<ScheduleData[]>([]);
   const { user } = useRole();
   const [referenceSchedules, setReferenceSchedules] = useState<ScheduleData[]>(
     []
@@ -128,9 +130,53 @@ const ManageSchedules = () => {
   const [timesheets, setTimesheets] = useState<TimesheetData[]>([]);
   useEffect(() => {
     fetchReferenceSchedules();
+    fetchActualSchedules();
     fetchEmployees();
     fetchTimesheets();
   }, []);
+
+  const fetchActualSchedules = async () => {
+    const { data: schedules, error: schedulesError } = await supabase
+      .from("schedules")
+      .select("*")
+      .or("status.eq.scheduled,status.eq.added_day");
+
+    if (schedulesError) {
+      console.error("Error fetching actual schedules:", schedulesError);
+      return;
+    }
+
+    const formattedSchedules = formatSchedules(schedules);
+    setActualSchedules(formattedSchedules);
+  };
+
+  // Helper function to format schedules (used for both reference and actual schedules)
+  const formatSchedules = (schedules: any) => {
+    return schedules.map((schedule: any) => {
+      const employee = employees.find(
+        (emp) => emp.employee_id === schedule.employee_id
+      );
+
+      return {
+        ...schedule,
+        employee_name: employee ? employee.name : "Unknown",
+        start_time: formatTime(schedule.start_time),
+        end_time: formatTime(schedule.end_time),
+      };
+    });
+  };
+
+  const formatTime = (time: string | null): string => {
+    if (!time) return "";
+    try {
+      const date = parseISO(`1970-01-01T${time}`);
+      const zonedDate = toZonedTime(date, timeZone);
+      return format(zonedDate, "h:mm a");
+    } catch (error) {
+      console.error("Error formatting time:", error);
+      return "";
+    }
+  };
 
   const fetchReferenceSchedules = async () => {
     const { data: schedules, error: schedulesError } = await supabase
@@ -403,16 +449,16 @@ const ManageSchedules = () => {
     employeeName: string,
     _: string | undefined,
     date?: string,
-    startTime?: string | null,
-    endTime?: string | null,
-    isOff?: boolean
+    startTime?: string,
+    endTime?: string
   ) => {
     const employee = employees.find((emp) => emp.name === employeeName);
     if (!employee) {
       console.error("Employee not found:", employeeName);
+      toast.error("Employee not found");
       return;
     }
-
+  
     if (date && startTime && endTime) {
       const daysOfWeek = [
         "Sunday",
@@ -424,32 +470,63 @@ const ManageSchedules = () => {
         "Saturday",
       ];
       const dayOfWeek = daysOfWeek[new Date(date + "T00:00:00").getDay()];
-
-      // Ensure the times are stored as they are entered, without any timezone manipulation
+  
       const formattedStartTime =
         startTime.length === 5 ? `${startTime}:00` : startTime;
       const formattedEndTime = endTime.length === 5 ? `${endTime}:00` : endTime;
-
-      const { error } = await supabase.from("schedules").insert({
+  
+      const scheduleData = {
         employee_id: employee.employee_id,
         schedule_date: date,
         start_time: formattedStartTime,
         end_time: formattedEndTime,
         day_of_week: dayOfWeek,
         status: "added_day",
-        name: employee.name, // Include the employee's name
-      });
-
-      if (error) {
-        console.error("Error adding schedule:", error);
+        name: employeeName,
+      };
+  
+      // Check if a schedule already exists for this employee and date
+      const { data: existingSchedule, error: fetchError } = await supabase
+        .from("schedules")
+        .select()
+        .match({ employee_id: employee.employee_id, schedule_date: date })
+        .single();
+  
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error("Error fetching existing schedule:", fetchError);
+        toast.error("Failed to check existing schedule");
+        return;
+      }
+  
+      let result;
+      if (existingSchedule) {
+        // Update existing schedule
+        result = await supabase
+          .from("schedules")
+          .update(scheduleData)
+          .match({ schedule_id: existingSchedule.schedule_id })
+          .select();
       } else {
-        // console.log("Schedule added successfully.");
-        fetchReferenceSchedules();
+        // Insert new schedule
+        result = await supabase
+          .from("schedules")
+          .insert(scheduleData)
+          .select();
+      }
+  
+      if (result.error) {
+        console.error("Error adding/updating schedule:", result.error);
+        toast.error("Failed to add/update schedule");
+      } else {
+        console.log("Schedule added/updated successfully:", result.data);
+        fetchActualSchedules();
+        toast.success("Schedule added/updated successfully");
       }
     } else {
       console.error(
         "Date, Start Time, and End Time are required to add a schedule."
       );
+      toast.error("Missing required information");
     }
   };
 
@@ -457,37 +534,21 @@ const ManageSchedules = () => {
     employeeName: string,
     _: string | undefined,
     date?: string,
-    startTime?: string | null,
-    endTime?: string | null,
-    isOff?: boolean
+    startTime?: string,
+    endTime?: string
   ) => {
     const employee = employees.find((emp) => emp.name === employeeName);
-    if (!employee || !date) {
+    if (!employee || !date || !startTime || !endTime) {
       console.error("Missing required information for updating schedule");
       return;
     }
-  
-    let updateData = {};
-    if (isOff) {
-      updateData = { start_time: null, end_time: null, status: "off" };
-    } else {
-      updateData = {
-        start_time: startTime || null,
-        end_time: endTime || null,
-        status: "scheduled",
-      };
-    }
-  
+
     const { error } = await supabase
-      .from("reference_schedules")
-      .upsert({
-        employee_id: employee.employee_id,
-        day_of_week: date,
-        ...updateData,
-      }, {
-        onConflict: 'employee_id,day_of_week'
-      });
-  
+      .from("schedules")
+      .update({ start_time: startTime, end_time: endTime })
+      .eq("employee_id", employee.employee_id)
+      .eq("schedule_date", date);
+
     if (error) {
       console.error("Error updating schedule:", error);
       toast.error("Failed to update schedule");
@@ -600,21 +661,17 @@ const ManageSchedules = () => {
                   <PopoverForm
                     onSubmit={(
                       employeeName: string,
-                      weeks?: string,
+                      _,
                       date?: string,
-                      startTime?: string | null,
-                      endTime?: string | null,
-                      lunchStart?: string,
-                      lunchEnd?: string,
-                      isOff?: boolean
+                      startTime?: string,
+                      endTime?: string
                     ) =>
                       handleAddSchedule(
                         employeeName,
                         undefined,
                         date,
                         startTime,
-                        endTime,
-                        isOff
+                        endTime
                       )
                     }
                     buttonText="Add An Unscheduled Shift"
@@ -633,21 +690,17 @@ const ManageSchedules = () => {
                   <PopoverForm
                     onSubmit={(
                       employeeName: string,
-                      weeks?: string,
+                      _,
                       date?: string,
-                      startTime?: string | null,
-                      endTime?: string | null,
-                      lunchStart?: string,
-                      lunchEnd?: string,
-                      isOff?: boolean
+                      startTime?: string,
+                      endTime?: string
                     ) =>
                       handleUpdateSchedule(
                         employeeName,
                         undefined,
                         date,
                         startTime,
-                        endTime,
-                        isOff
+                        endTime
                       )
                     }
                     buttonText="Update Existing Shift"
@@ -663,8 +716,9 @@ const ManageSchedules = () => {
             <CardContent>
               <DataTable
                 columns={scheduleColumns}
-                data={referenceSchedules}
+                data={[...referenceSchedules, ...actualSchedules]}
                 fetchReferenceSchedules={fetchReferenceSchedules}
+                fetchActualSchedules={fetchActualSchedules}
               />
               <SchedulePagination table={table} />
             </CardContent>

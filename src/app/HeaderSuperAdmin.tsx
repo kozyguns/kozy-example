@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
@@ -72,9 +74,9 @@ const auditComponents = [
 
 const schedComponents = [
   {
-    title: "Company Calendar",
+    title: "Calendar",
     href: "/team/crew/calendar",
-    description: "Who's Working & When",
+    description: "Where Dey At",
   },
   {
     title: "Submit Time Off",
@@ -87,9 +89,9 @@ const schedComponents = [
     description: "View All Requests For Time Off",
   },
   {
-    title: "Schedule Management",
+    title: "Create | Manage Schedules",
     href: "/admin/schedules",
-    description: "Create, Edit, Delete Schedules",
+    description: "Manage Schedules & Timesheets",
   },
   {
     title: "Staff Profiles",
@@ -146,7 +148,7 @@ const formComps = [
 
 const sopComps = [
   {
-    title: "Team SOPs",
+    title: "TGR SOPs",
     href: "/team/sop",
     description: "SOPs For Front Of The House",
   },
@@ -222,9 +224,9 @@ const manageComps = [
     description: "Download Various Reports",
   },
   {
-    title: "Staff Management",
+    title: "Manage Employee Data",
     href: "/team/employees",
-    description: "Manage Profiles, Schedules, etc.",
+    description: "Set All Employee Details",
   },
   {
     title: "Audit Management",
@@ -500,6 +502,14 @@ const HeaderSuperAdmin = React.memo(() => {
       title: "Your Profile",
       href: employeeId ? `/team/crew/profile/${employeeId}` : "#",
       description: "Your Personal Profile",
+    },
+  ];
+
+  const aimComps = [
+    {
+      title: "AIM",
+      href: "/aim",
+      description: "API Testing",
     },
   ];
 

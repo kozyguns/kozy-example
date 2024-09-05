@@ -79,6 +79,17 @@ export const columns: ColumnDef<Employee>[] = [
     },
   },
   {
+    accessorKey: "hire_date",
+
+    header: "Hire Date",
+  },
+
+  {
+    accessorKey: "birthday",
+
+    header: "Birthday",
+  },
+  {
     accessorKey: "rank",
     header: "Rank",
   },

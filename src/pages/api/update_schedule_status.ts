@@ -89,7 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       switch (status) {
         case "added_day":
-          subject = "New Shift Added to Your Schedule";
+          subject = "New Shift Has Been Added to Your Schedule";
           EmailTemplate = ShiftAdded;
           templateData = {
             name: employeeName,

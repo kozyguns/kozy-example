@@ -54,6 +54,8 @@ export default function AddEmployeeDialog({
       pay_type: "",
       rank: null,
       pay_rate: null,
+      hire_date: null,
+      birthday: null,
     }
   );
 
@@ -140,6 +142,8 @@ export default function AddEmployeeDialog({
         pay_type: "",
         rank: null,
         pay_rate: null,
+        hire_date: null,
+        birthday: null,
       });
       setSchedule(initialSchedule);
       onClose();
@@ -235,6 +239,31 @@ export default function AddEmployeeDialog({
                   step="0.01"
                   value={newEmployee.pay_rate?.toString() || ""}
                   onChange={handleInputChange}
+                />
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="hire_date">Hire Date</Label>
+
+                <Input
+                  id="hire_date"
+                  name="hire_date"
+                  type="date"
+                  value={newEmployee.hire_date || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="birthday">Birthday</Label>
+
+                <Input
+                  id="birthday"
+                  name="birthday"
+                  type="date"
+                  value={newEmployee.birthday || ""}
+                  onChange={handleInputChange}
+                  required
                 />
               </div>
             </div>
