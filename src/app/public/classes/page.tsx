@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { AddClassPopover } from "./AddClassPopover";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { ChevronRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import {
   format,
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
   isSameDay,
+  addMonths,
+  subMonths
 } from "date-fns";
 import { supabase } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ interface ClassSchedule {
 
 export default function Component() {
   const [classSchedules, setClassSchedules] = useState<ClassSchedule[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<ClassSchedule[] | null>(
     null
   );
@@ -66,21 +69,33 @@ export default function Component() {
     // Remove the id from the updates object
     const { id: _, ...classData } = updates;
   
+    console.log("Data being sent to Supabase:", classData);
+  
     const { data, error } = await supabase
       .from("class_schedules")
-      .insert([classData]);
+      .insert([classData])
+      .select(); // Add .select() to return the inserted data
   
     if (error) {
       console.error("Error adding class:", error);
     } else {
+      console.log("Inserted data:", data);
       setClassSchedules((prev) => [...prev, ...(data || [])]);
     }
   };
 
   const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(new Date()),
-    end: endOfMonth(new Date()),
+    start: startOfMonth(currentMonth),
+    end: endOfMonth(currentMonth),
   });
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(prevMonth => subMonths(prevMonth, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(prevMonth => addMonths(prevMonth, 1));
+  };
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -97,22 +112,26 @@ export default function Component() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Calendar</h2>
-            <div className="flex items-center space-x-4">
-              <button className="hover:focus:outline-none" title="Next Month">
-                <ChevronRightIcon className="h-6 w-6" />
-              </button>
-            </div>
+            <button 
+              className="hover:focus:outline-none" 
+              title="Previous Month"
+              onClick={goToPreviousMonth}
+            >
+              <ChevronLeftIcon className="h-6 w-6" />
+            </button>
+            <h2 className="text-2xl font-bold">{format(currentMonth, 'MMMM yyyy')}</h2>
+            <button 
+              className="hover:focus:outline-none" 
+              title="Next Month"
+              onClick={goToNextMonth}
+            >
+              <ChevronRightIcon className="h-6 w-6" />
+            </button>
           </div>
           <div className="grid grid-cols-7 gap-4">
             {daysInMonth.map((day) => {
               const eventsForDay = classSchedules.filter((event) => {
-                const eventDate = new Date(event.start_time).setHours(
-                  0,
-                  0,
-                  0,
-                  0
-                );
+                const eventDate = new Date(event.start_time).setHours(0, 0, 0, 0);
                 return isSameDay(eventDate, day);
               });
 
