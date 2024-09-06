@@ -38,6 +38,16 @@ const AddTimesheetForm: React.FC<AddTimesheetFormProps> = ({
   const [lunchStart, setLunchStart] = useState("");
   const [lunchEnd, setLunchEnd] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const resetForm = () => {
+    setEmployeeId(null);
+    setDate("");
+    setStartTime("");
+    setLunchStart("");
+    setLunchEnd("");
+    setEndTime("");
+  };
 
   const handleSubmit = () => {
     if (employeeId && date && startTime) {
@@ -49,13 +59,16 @@ const AddTimesheetForm: React.FC<AddTimesheetFormProps> = ({
         lunchEnd || null,
         endTime || null
       );
+      resetForm();
+      setIsOpen(false);
+      toast.success("Timesheet entry added successfully");
     } else {
       toast.error("Please fill in employee, date, and start time");
     }
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button variant="linkHover2">Add Timesheet Entry</Button>
       </PopoverTrigger>

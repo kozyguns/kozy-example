@@ -172,19 +172,19 @@ function ChatContent() {
 
   const handleGroupChatInsert = async (payload: GroupChatPayload) => {
     const newGroupChat = payload.new;
-
+  
     if (user && newGroupChat?.users.includes(user.id)) {
       const validUserIds = newGroupChat.users.filter((id) => id !== null);
       const { data: usersData, error: usersError } = await supabase
         .from("employees")
         .select("user_uuid, name")
         .in("user_uuid", validUserIds);
-
+  
       if (usersError) {
         console.error("Error fetching group chat users:", usersError.message);
         return;
       }
-
+  
       if (usersData) {
         const userMap: Record<string, string> = usersData.reduce(
           (acc, user) => {
@@ -193,7 +193,7 @@ function ChatContent() {
           },
           {} as Record<string, string>
         );
-
+  
         setDmUsers((prev) => {
           const existingGroupChat = prev.find(
             (chat) => chat.id === `group_${newGroupChat.id}`
@@ -201,9 +201,9 @@ function ChatContent() {
           if (existingGroupChat) {
             return prev;
           }
-
+  
           return [
-            ...prev,
+            ...prev.filter((u) => u.id !== `group_${newGroupChat.id}`),
             {
               id: `group_${newGroupChat.id}`,
               name: newGroupChat.name,
@@ -298,27 +298,30 @@ function ChatContent() {
     console.log(`Group chat ${deletedGroupChatId} deletion handled`);
   };
 
+  // Update the fetchGroupChats function
   const fetchGroupChats = async () => {
     if (!user || !user.id) {
       console.error("User or user.id is not available");
       return;
     }
-
+  
     const { data: groupChats, error } = await supabase
       .from("group_chats")
       .select("*")
       .filter("users", "cs", `{${user.id}}`);
-
+  
     if (error) {
       console.error("Error fetching group chats:", error.message);
     } else if (groupChats) {
       setDmUsers((prev) => {
-        const existingGroupChatIds = prev
-          .filter((u) => u.id.startsWith("group_"))
-          .map((u) => u.id);
-
+        // Create a set of existing group chat IDs
+        const existingGroupChatIds = new Set(
+          prev.filter((u) => u.id.startsWith("group_")).map((u) => u.id)
+        );
+  
+        // Filter out any duplicate group chats and add only new ones
         const newGroupChats = groupChats
-          .filter((chat) => !existingGroupChatIds.includes(`group_${chat.id}`))
+          .filter((chat) => !existingGroupChatIds.has(`group_${chat.id}`))
           .map((chat) => ({
             id: `group_${chat.id}`,
             name: chat.name,
@@ -326,8 +329,12 @@ function ChatContent() {
             users: chat.users,
             created_by: chat.created_by,
           }));
-
-        return [...prev, ...newGroupChats];
+  
+        // Combine existing users (both direct and group) with new unique group chats
+        return [
+          ...prev.filter((u) => !newGroupChats.some(newChat => newChat.id === u.id)),
+          ...newGroupChats
+        ];
       });
     }
   };
@@ -446,7 +453,7 @@ function ChatContent() {
               .from("employees")
               .select("user_uuid, name")
               .in("user_uuid", chat.users);
-
+      
             if (usersError) {
               console.error(
                 "Error fetching group chat users:",
@@ -454,7 +461,7 @@ function ChatContent() {
               );
               return null;
             }
-
+      
             const userMap = usersData.reduce<Record<string, string>>(
               (acc, user) => {
                 acc[user.user_uuid] = user.name;
@@ -462,7 +469,7 @@ function ChatContent() {
               },
               {}
             );
-
+      
             return {
               id: `group_${chat.id}`,
               name: chat.name,
@@ -472,11 +479,18 @@ function ChatContent() {
             } as GroupChat;
           })
         );
-
-        setDmUsers((prev) => [
-          ...prev,
-          ...groupChatUsers.filter((chat): chat is GroupChat => chat !== null),
-        ]);
+      
+        setDmUsers((prev) => {
+          const existingGroupChatIds = new Set(
+            prev.filter((u) => u.id.startsWith("group_")).map((u) => u.id)
+          );
+      
+          const newGroupChats = groupChatUsers
+            .filter((chat): chat is GroupChat => chat !== null)
+            .filter((chat) => !existingGroupChatIds.has(chat.id));
+      
+          return [...prev, ...newGroupChats];
+        });
 
         // Fetch initial messages for all group chats
         for (const groupChat of groupChats) {
@@ -547,7 +561,12 @@ function ChatContent() {
     const client = supabase;
 
     const setupSubscriptions = () => {
-      if (!channel.current) {
+      if (
+        !channel.current ||
+        directMessageChannelRef.current ||
+        presenceChannel.current ||
+        groupChatChannelRef.current
+      ) {
         channel.current = client.channel("chat-room", {
           config: {
             broadcast: {
@@ -978,16 +997,27 @@ function ChatContent() {
     if (data && data.length > 0) {
       const newGroupChat = data[0];
 
-      setDmUsers((prev) => [
-        ...prev,
-        {
-          id: `group_${newGroupChat.id}`,
-          name: newGroupChat.name,
-          is_online: true,
-          users: newGroupChat.users,
-          created_by: newGroupChat.created_by,
-        },
-      ]);
+      setDmUsers((prev) => {
+        // Check if the group chat already exists
+        const existingGroupChat = prev.find(
+          (chat) => chat.id === `group_${newGroupChat.id}`
+        );
+        if (existingGroupChat) {
+          return prev; // Return the previous state without changes
+        }
+
+        // Add the new group chat only if it doesn't exist
+        return [
+          ...prev,
+          {
+            id: `group_${newGroupChat.id}`,
+            name: newGroupChat.name,
+            is_online: true,
+            users: newGroupChat.users,
+            created_by: newGroupChat.created_by,
+          },
+        ];
+      });
 
       setSelectedChat(`group_${newGroupChat.id}`);
 
@@ -1667,9 +1697,9 @@ function ChatContent() {
 
                     {dmUsers
                       .filter((u) => u.id.startsWith("group_"))
-                      .map((groupChat, index) => (
+                      .map((groupChat) => (
                         <div
-                          key={`${groupChat.id}-${index}`}
+                          key={groupChat.id}
                           className={`flex items-center min-h-[3.5rem] gap-3 rounded-md px-3 py-2 transition-colors hover:bg-gray-200 dark:hover:bg-neutral-800 ${
                             selectedChat === groupChat.id
                               ? "bg-muted dark:bg-muted"
