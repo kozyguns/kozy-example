@@ -10,13 +10,13 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
-import QueryProvider from "@/components/query-provider";
+import { UnreadCountsProvider } from "../components/UnreadCountsContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AHR",
-  description: "AHR Management Portal",
+  description: "HR & Staff Management Portal",
 };
 
 const clientId = process.env.GOOGLE_CLIENT_ID!;
@@ -41,14 +41,13 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              {/* <QueryProvider> */}
-              <NotificationsProvider>
-                <Header />
-                <main>{children}</main>
-
-                <Toaster />
-              </NotificationsProvider>
-              {/* </QueryProvider> */}
+              <UnreadCountsProvider>
+                <NotificationsProvider>
+                  <Header />
+                  <main>{children}</main>
+                  <Toaster />
+                </NotificationsProvider>
+              </UnreadCountsProvider>
             </ThemeProvider>
           </body>
         </html>

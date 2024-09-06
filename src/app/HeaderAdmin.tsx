@@ -278,8 +278,11 @@ const HeaderAdmin = React.memo(() => {
   const [user, setUser] = useState<any>(null);
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
-  const router = useRouter();
+  const router = useRouter(); // Instantiate useRouter
   const { setTheme } = useTheme();
+  const [isChatActive, setIsChatActive] = useState(false);
+  const unreadOrderCount = useUnreadOrders(); // Use the hook to get unread orders
+  const unreadTimeOffCount = useUnreadTimeOffRequests(); // Use the hook to get unread time-off requests
 
   const fetchUserAndEmployee = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -304,42 +307,25 @@ const HeaderAdmin = React.memo(() => {
   const fetchUnreadCounts = useCallback(async () => {
     if (!user) return;
 
-    // Fetch unread direct messages
     const { data: dmData, error: dmError } = await supabase
       .from("direct_messages")
-      .select("sender_id, is_read")
+      .select("id")
       .eq("receiver_id", user.id)
       .eq("is_read", false);
 
-    // Fetch unread group messages
     const { data: groupData, error: groupError } = await supabase
       .from("group_chat_messages")
-      .select("id, group_chat_id, read_by")
+      .select("id")
       .not("read_by", "cs", `{${user.id}}`);
 
-    if (dmError) {
-      console.error("Error fetching unread direct messages:", dmError.message);
-    }
-
-    if (groupError) {
+    if (dmError) console.error("Error fetching unread DMs:", dmError.message);
+    if (groupError)
       console.error(
         "Error fetching unread group messages:",
         groupError.message
       );
-    }
 
-    let totalUnread = 0;
-
-    // Count unread direct messages
-    if (dmData) {
-      totalUnread += dmData.length;
-    }
-
-    // Count unread group messages
-    if (groupData) {
-      totalUnread += groupData.length;
-    }
-
+    const totalUnread = (dmData?.length || 0) + (groupData?.length || 0);
     setTotalUnreadCount(totalUnread);
   }, [user]);
 
@@ -364,33 +350,53 @@ const HeaderAdmin = React.memo(() => {
   }, [fetchUserAndEmployee]);
 
   useEffect(() => {
-    if (user) {
+    const checkChatActive = () => {
+      const isActive = localStorage.getItem("isChatActive") === "true";
+      setIsChatActive(isActive);
+    };
+
+    checkChatActive(); // Check initially
+    window.addEventListener("chatActiveChange", checkChatActive);
+
+    return () => {
+      window.removeEventListener("chatActiveChange", checkChatActive);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user && !isChatActive) {
       fetchUnreadCounts();
 
       const groupChatMessageSubscription = supabase
-        .channel("group_chat_messages")
-        .on<ChatMessage>(
+        .channel("group-chat-changes")
+        .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "group_chat_messages" },
           (payload) => {
-            if (
-              payload.new.sender_id !== user.id &&
-              (!payload.new.read_by || !payload.new.read_by.includes(user.id))
-            ) {
-              setTotalUnreadCount((prev) => prev + 1);
+            if (!isChatActive) {
+              const newMessage = payload.new as ChatMessage;
+              if (
+                newMessage.sender_id !== user.id &&
+                (!newMessage.read_by || !newMessage.read_by.includes(user.id))
+              ) {
+                setTotalUnreadCount((prev) => prev + 1);
+              }
             }
           }
         )
         .subscribe();
 
       const directMessageSubscription = supabase
-        .channel("direct_messages")
-        .on<ChatMessage>(
+        .channel("direct-message-changes")
+        .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "direct_messages" },
           (payload) => {
-            if (payload.new.receiver_id === user.id && !payload.new.is_read) {
-              setTotalUnreadCount((prev) => prev + 1);
+            if (!isChatActive) {
+              const newMessage = payload.new as ChatMessage;
+              if (newMessage.receiver_id === user.id && !newMessage.is_read) {
+                setTotalUnreadCount((prev) => prev + 1);
+              }
             }
           }
         )
@@ -401,10 +407,7 @@ const HeaderAdmin = React.memo(() => {
         directMessageSubscription.unsubscribe();
       };
     }
-  }, [user, fetchUnreadCounts]);
-
-  const unreadOrderCount = useUnreadOrders(); // Use the hook to get unread orders
-  const unreadTimeOffCount = useUnreadTimeOffRequests(); // Use the hook to get unread time-off requests
+  }, [user, fetchUnreadCounts, isChatActive]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

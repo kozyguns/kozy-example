@@ -231,7 +231,7 @@ const HeaderUser = React.memo(() => {
             </>
           ) : (
             <Link href="/sign-in">
-              <Button variant="linkHover1">Sign In</Button>
+              <Button variant="linkHover2">Sign In</Button>
             </Link>
           )}
         </div>
