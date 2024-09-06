@@ -130,6 +130,23 @@ function ChatContent() {
   const userDataRef = useRef<{ user: User | null }>({ user: null });
   const directMessageChannelRef = useRef<RealtimeChannel | null>(null);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const isVisible = !document.hidden;
+      setIsChatActive(isVisible);
+      localStorage.setItem("isChatActive", isVisible.toString());
+      window.dispatchEvent(
+        new CustomEvent("chatActiveChange", { detail: { isActive: isVisible } })
+      );
+    };
+  
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -1239,7 +1256,7 @@ function ChatContent() {
   const handleMessageChange = useCallback(
     (payload: any, chatType: string) => {
       console.log(`${chatType} message change:`, payload);
-
+  
       if (payload.eventType === "INSERT") {
         const newMessage = payload.new;
         const isCurrentChat =
@@ -1248,9 +1265,8 @@ function ChatContent() {
           (chatType === "direct" &&
             (newMessage.sender_id === selectedChat ||
               newMessage.receiver_id === selectedChat));
-
+  
         setMessages((prevMessages) => {
-          // Check if the message already exists in the state
           if (prevMessages.some((msg) => msg.id === newMessage.id)) {
             return prevMessages;
           }
@@ -1260,12 +1276,12 @@ function ChatContent() {
           }
           return updatedMessages;
         });
-
+  
         if (newMessage.sender_id !== user.id) {
-          const isChatActiveNow =
-            localStorage.getItem("isChatActive") === "true";
-
-          if (!isChatActiveNow || !isCurrentChat) {
+          const isChatActiveNow = localStorage.getItem("isChatActive") === "true";
+          const shouldIncrementUnread = !isChatActiveNow || !isCurrentChat;
+  
+          if (shouldIncrementUnread) {
             if (chatType === "direct" && newMessage.receiver_id === user.id) {
               const senderId = newMessage.sender_id;
               if (typeof senderId === "string") {
@@ -1278,11 +1294,22 @@ function ChatContent() {
                   [senderId]: (prevCounts[senderId] || 0) + 1,
                 }));
                 setTotalUnreadCount((prev) => prev + 1);
-
+  
                 if (!dmUsers.some((u) => u.id === senderId)) {
                   fetchSender(senderId);
                 }
               }
+            } else if (chatType === "group") {
+              const groupId = `group_${newMessage.group_chat_id}`;
+              setUnreadStatus((prevStatus) => ({
+                ...prevStatus,
+                [groupId]: true,
+              }));
+              setUnreadCounts((prevCounts) => ({
+                ...prevCounts,
+                [groupId]: (prevCounts[groupId] || 0) + 1,
+              }));
+              setTotalUnreadCount((prev) => prev + 1);
             }
             fetchUnreadCounts();
           }
