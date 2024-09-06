@@ -8,7 +8,7 @@ import { TextGenerateEffect } from "./ui/text-generate-effect";
 import { TextGenerateColor } from "./ui/text-generate-color";
 import { TracingBeam } from "./ui/tracing-beam";
 
-const title = "The Gun Range";
+const title = "Abel HR & Staff Management";
 const sub = "We've Got You Covered For All Of Your HR & Staff Management Needs";
 
 const LandingPagePublic: React.FC = React.memo(() => {
@@ -19,7 +19,7 @@ const LandingPagePublic: React.FC = React.memo(() => {
           <div className="flex items-start justify-start">
             <div className="w-full mx-auto max-w-xl mb-4">
               <Image
-                src="/AHRBannerbg.png"
+                src="/AHReady.png"
                 alt="Banner"
                 layout="responsive"
                 width={1000}

@@ -63,18 +63,16 @@ export default function Component() {
     id: string,
     updates: Partial<ClassSchedule>
   ) => {
-    // console.log("handleAddClass triggered with data:", updates);
-
+    // Remove the id from the updates object
+    const { id: _, ...classData } = updates;
+  
     const { data, error } = await supabase
       .from("class_schedules")
-      .insert([{ ...updates }]);
-
-    // console.log("Supabase insert response:", { data, error }); // Debugging line
-
+      .insert([classData]);
+  
     if (error) {
       console.error("Error adding class:", error);
     } else {
-      // console.log("Class added successfully, updating state...");
       setClassSchedules((prev) => [...prev, ...(data || [])]);
     }
   };

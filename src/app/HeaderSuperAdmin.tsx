@@ -239,6 +239,11 @@ const manageComps = [
     description: "Uploadthing",
   },
   {
+    title: "View Classes",
+    href: "/public/classes",
+    description: "View & Add Classes",
+  },
+  {
     title: "Onboarding",
     href: "/admin/onboarding",
     description: "Trial Onboarding",
