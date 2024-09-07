@@ -1116,6 +1116,7 @@ function ChatContent() {
       });
 
       setSelectedChat(`group_${newGroupChat.id}`);
+      setMessages([]);
 
       const { data: initialMessages, error: messagesError } = await supabase
         .from("group_chat_messages")
@@ -1129,8 +1130,30 @@ function ChatContent() {
           messagesError.message
         );
       } else {
-        setMessagesWithoutDuplicates(initialMessages || []);
+        setMessages(initialMessages || []);
       }
+
+      // Send initial message
+    const initialMessage = "Group chat created";
+    const { data: sentMessage, error: sendError } = await supabase
+      .from("group_chat_messages")
+      .insert([
+        {
+          group_chat_id: newGroupChat.id,
+          sender_id: user.id,
+          message: initialMessage,
+          created_at: new Date().toISOString(),
+          read_by: [user.id],
+        },
+      ])
+      .select();
+
+    if (sendError) {
+      console.error("Error sending initial message:", sendError.message);
+    } else if (sentMessage) {
+      setMessages((prev) => [...prev, sentMessage[0]]);
+    }
+
       scrollToBottom();
     }
     setSelectedUsers([]);
@@ -1332,37 +1355,36 @@ function ChatContent() {
     }, {});
   };
 
-  const handleMessageChange = useCallback(
-    (payload: any, chatType: string) => {
-      console.log(`${chatType} message change:`, payload);
+const handleMessageChange = useCallback(
+  (payload: any, chatType: string) => {
+    console.log(`${chatType} message change:`, payload);
 
-      if (payload.eventType === "INSERT") {
-        const newMessage = payload.new;
-        const isCurrentChat =
-          (chatType === "group" &&
-            selectedChat === `group_${newMessage.group_chat_id}`) ||
-          (chatType === "direct" &&
-            (newMessage.sender_id === selectedChat ||
-              newMessage.receiver_id === selectedChat));
+    if (payload.eventType === "INSERT") {
+      const newMessage = payload.new;
+      const isCurrentChat =
+        (chatType === "group" &&
+          selectedChat === `group_${newMessage.group_chat_id}`) ||
+        (chatType === "direct" &&
+          (newMessage.sender_id === selectedChat ||
+            newMessage.receiver_id === selectedChat));
 
-        setMessages((prevMessages) => {
-          if (prevMessages.some((msg) => msg.id === newMessage.id)) {
-            return prevMessages;
-          }
-          const updatedMessages = [...prevMessages, newMessage];
-          if (isCurrentChat) {
-            scrollToBottom();
-          }
-          return updatedMessages;
-        });
+      setMessages((prevMessages) => {
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          return prevMessages;
+        }
+        const updatedMessages = [...prevMessages, newMessage];
+        if (isCurrentChat) {
+          scrollToBottom();
+        }
+        return updatedMessages;
+      });
 
-        if (newMessage.sender_id !== user.id) {
-          const isChatActiveNow =
-            localStorage.getItem("isChatActive") === "true";
-          const shouldIncrementUnread = !isChatActiveNow || !isCurrentChat;
+      if (newMessage.sender_id !== user.id) {
+        const isChatActiveNow = localStorage.getItem("isChatActive") === "true";
+        const shouldIncrementUnread = !isChatActiveNow || !isCurrentChat;
 
-          if (shouldIncrementUnread) {
-            if (chatType === "direct" && newMessage.receiver_id === user.id) {
+        if (shouldIncrementUnread) {
+          if (chatType === "direct" && newMessage.receiver_id === user.id) {
               const senderId = newMessage.sender_id;
               if (typeof senderId === "string") {
                 setUnreadStatus((prevStatus) => ({
@@ -1404,15 +1426,15 @@ function ChatContent() {
     },
     [
       selectedChat,
-      user?.id,
-      dmUsers,
-      fetchSender,
-      fetchUnreadCounts,
-      scrollToBottom,
-      setMessages,
-      setUnreadStatus,
-      setUnreadCounts,
-      setTotalUnreadCount,
+    user?.id,
+    dmUsers,
+    fetchSender,
+    fetchUnreadCounts,
+    scrollToBottom,
+    setMessages,
+    setUnreadStatus,
+    setUnreadCounts,
+    setTotalUnreadCount,
     ]
   );
 
@@ -1961,7 +1983,7 @@ function ChatContent() {
                       <div key={i} className="flex items-start gap-4">
                         <Avatar className="border items-center justify-center">
                           <AvatarImage
-                            src="/Circular.png"
+                            src="/AHRletters.png"
                             className="w-full h-full"
                           />
                           <AvatarFallback>

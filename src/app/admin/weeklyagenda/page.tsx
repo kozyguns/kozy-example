@@ -370,7 +370,7 @@ const Column = ({
               <div className="mt-1.5 flex items-center justify-end gap-1.5">
                 <button
                   type="submit"
-                  className="flex items-center gap-1.5 rounded bg-neutral-50 px-2 py-1 text-xs transition-colors hover:bg-neutral-300"
+                  className="flex items-center gap-1.5 rounded bg-neutral-50 px-2 py-1 dark:text-black text-xs transition-colors hover:bg-neutral-300"
                 >
                   <span>Save</span>
                 </button>

@@ -143,7 +143,7 @@ export default function SignIn() {
           <CardDescription>
             <div className="text-center space-y-3">
               <Image
-                src={"/ahr.png"}
+                src={"/AHRletters.png"}
                 alt="ahr logo"
                 width={50}
                 height={50}
