@@ -74,6 +74,76 @@ export default function FirearmsChecklist() {
     fetchUserRoleAndUuid();
   }, [fetchUserRoleAndUuid]);
 
+  const handleRequestInspection = async (id: number, notes: string) => {
+    try {
+      // Update the firearm's notes in the database
+      const { error } = await supabase
+        .from("firearms_maintenance")
+        .update({
+          rental_notes: "Inspection Requested",
+          verified_status: "Inspection Requested",
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      // Update local state
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                notes: "Inspection Requested",
+                verified_status: "Inspection Requested",
+              }
+            : item
+        )
+      );
+
+      // Fetch gunsmith and admin emails REMEMBER TO CHANGE THIS TO THE APPROPRIATE ROLES *************
+      const { data: employees, error: employeesError } = await supabase
+        .from("employees")
+        .select("contact_info, role")
+        .in("role", ["gunsmith", "admin", "super admin"]);
+
+      if (employeesError) throw employeesError;
+
+      const recipientEmails = employees.map((emp) => emp.contact_info);
+
+      // Get the firearm name
+      const firearm = data.find((item) => item.id === id);
+      const firearmName = firearm ? firearm.firearm_name : "Unknown Firearm";
+
+      // Send email using the API
+      const response = await fetch("/api/send_email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: recipientEmails,
+          subject: "Firearm Inspection Requested",
+          templateName: "GunsmithInspection",
+          templateData: {
+            firearmId: id,
+            firearmName: firearmName,
+            requestedBy: userName || "Unknown User",
+            notes: notes,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
+
+      toast.success("Inspection request submitted successfully.");
+    } catch (error) {
+      console.error("Error requesting inspection:", error);
+      toast.error("Failed to submit inspection request.");
+    }
+  };
+
   const fetchFirearmsMaintenanceData = useCallback(async () => {
     const today = new Date().toISOString().split("T")[0];
 
@@ -594,6 +664,7 @@ export default function FirearmsChecklist() {
                         onVerificationComplete={fetchData}
                         onDeleteFirearm={handleDeleteFirearm}
                         onEditFirearm={handleEditFirearm}
+                        onRequestInspection={handleRequestInspection}
                       />
                     </>
                   )

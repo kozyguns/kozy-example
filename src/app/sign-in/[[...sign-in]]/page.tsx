@@ -155,11 +155,6 @@ export default function SignIn() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="membersLogin">
-            {/* <TabsList className="flex">
-              <TabsTrigger value="membersLogin">Members Login</TabsTrigger>
-              <TabsTrigger value="employeesLogin">Employees Login</TabsTrigger>
-            </TabsList> */}
-
             <TabsContent value="membersLogin">
               <form onSubmit={handleSubmit(onSubmit)} className="grid gap-2">
                 <div className="grid gap-2">
@@ -229,22 +224,6 @@ export default function SignIn() {
                 </Link>
               </div>
             </TabsContent>
-
-            {/* <TabsContent value="employeesLogin">
-              <div className="flex flex-col my-4 items-center justify-center">
-                <div className="flex flex-col gap-1 my-4">
-                  <Label htmlFor="email">Login With Your Work Email</Label>
-                  <Button
-                    onClick={() => loginWithOAuth("google")}
-                    variant="gooeyRight"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? "Logging in..." : "Login with Google"}
-                  </Button>
-                </div>
-              </div>
-            </TabsContent> */}
           </Tabs>
         </CardContent>
       </Card>

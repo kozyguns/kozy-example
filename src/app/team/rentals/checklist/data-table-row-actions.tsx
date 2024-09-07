@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/dialog";
 import { VerificationForm } from "./verification-form";
 import EditFirearmForm from "./EditFirearmForm";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils"; // Make sure this import is available
+import { Input } from "@/components/ui/input";
 
 interface DataTableRowActionsProps {
   row: Row<FirearmsMaintenanceData>;
@@ -40,6 +43,7 @@ interface DataTableRowActionsProps {
     firearm_name: string;
     maintenance_frequency: number;
   }) => void;
+  onRequestInspection: (id: number, notes: string) => void;
 }
 
 export function DataTableRowActions({
@@ -50,11 +54,20 @@ export function DataTableRowActions({
   onVerificationComplete,
   onDeleteFirearm, // Add this prop
   onEditFirearm, // Add this prop
+  onRequestInspection,
 }: DataTableRowActionsProps) {
   const task = row.original;
   const [openVerification, setOpenVerification] = useState(false);
   const [data, setData] = useState<FirearmsMaintenanceData[]>([]);
   const [openEditFirearm, setOpenEditFirearm] = useState(false);
+  const [openInspectionRequest, setOpenInspectionRequest] = useState(false);
+  const [inspectionNotes, setInspectionNotes] = useState("");
+
+  const handleRequestInspection = () => {
+    onRequestInspection(task.id, inspectionNotes);
+    setOpenInspectionRequest(false);
+    setInspectionNotes("");
+  };
 
   const handleSetGunsmithStatus = async (status: string) => {
     try {
@@ -267,6 +280,10 @@ export function DataTableRowActions({
               >
                 Returned From Gunsmith
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => setOpenInspectionRequest(true)}>
+                Request Inspection
+              </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
@@ -322,6 +339,33 @@ export function DataTableRowActions({
             onEdit={handleEditFirearm}
             onCancel={() => setOpenEditFirearm(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={openInspectionRequest}
+        onOpenChange={setOpenInspectionRequest}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Inspection</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Explain what's going on with the firearm..."
+            value={inspectionNotes}
+            onChange={(e) => setInspectionNotes(e.target.value)}
+          />
+          <DialogFooter>
+            <Button
+              variant="linkHover2"
+              onClick={() => setOpenInspectionRequest(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="outline" onClick={handleRequestInspection}>
+              Submit Request
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
