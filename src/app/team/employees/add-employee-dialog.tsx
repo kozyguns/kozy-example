@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,13 @@ interface ScheduleEntry {
   day: string;
   start_time: string;
   end_time: string;
+}
+
+interface ReferenceOption {
+  id: number;
+  field_name: string;
+  option_value: string;
+  display_order: number;
 }
 
 const initialSchedule: ScheduleEntry[] = [
@@ -60,6 +67,31 @@ export default function AddEmployeeDialog({
   );
 
   const [schedule, setSchedule] = useState<ScheduleEntry[]>(initialSchedule);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [referenceOptions, setReferenceOptions] = useState<ReferenceOption[]>([]);
+
+  useEffect(() => {
+    fetchReferenceOptions();
+  }, []);
+
+  const fetchReferenceOptions = async () => {
+    const { data, error } = await supabase
+      .from("onboarding_references")
+      .select("*")
+      .order("display_order");
+
+    if (error) {
+      console.error("Error fetching reference options:", error);
+    } else {
+      setReferenceOptions(data || []);
+    }
+  };
+
+  const getOptionsForField = (fieldName: string) => {
+    return referenceOptions
+      .filter(option => option.field_name === fieldName)
+      .sort((a, b) => a.display_order - b.display_order);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -175,23 +207,39 @@ export default function AddEmployeeDialog({
               </div>
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input
-                  id="department"
-                  name="department"
+                <Select
+                  onValueChange={(value) => handleSelectChange("department", value)}
                   value={newEmployee.department}
-                  onChange={handleInputChange}
-                  required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getOptionsForField("department").map((option) => (
+                      <SelectItem key={option.id} value={option.option_value}>
+                        {option.option_value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Input
-                  id="role"
-                  name="role"
+                <Select
+                  onValueChange={(value) => handleSelectChange("role", value)}
                   value={newEmployee.role}
-                  onChange={handleInputChange}
-                  required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getOptionsForField("role").map((option) => (
+                      <SelectItem key={option.id} value={option.option_value}>
+                        {option.option_value}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex flex-col space-y-2">
                 <Label htmlFor="contact_info">Contact Info</Label>
