@@ -685,7 +685,7 @@ const HeaderSuperAdmin = React.memo(() => {
               </DropdownMenu>
             </>
           ) : (
-            <Link href="/team/crew/login">
+            <Link href="/sign-in">
               <Button variant="linkHover2">Sign In</Button>
             </Link>
           )}
