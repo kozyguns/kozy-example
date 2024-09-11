@@ -64,7 +64,7 @@ export default function ProfilePage() {
 
   return (
     <Card className="w-full max-w-3xl my-8 mx-auto">
-      <header className="bg-gray-200 dark:bg-gray-800 p-6 rounded-t-lg flex items-center gap-4">
+      <header className="bg-muted dark:bg-muted p-6 rounded-t-lg flex items-center gap-4">
         <Avatar className="h-12 w-12">
           <AvatarImage src="/ahr.png" />
           <AvatarFallback></AvatarFallback>
@@ -74,7 +74,7 @@ export default function ProfilePage() {
         </div>
       </header>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="bg-white dark:bg-black p-6 rounded-b-lg space-y-6">
+        <div className=" p-6 rounded-b-lg space-y-6">
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <div>

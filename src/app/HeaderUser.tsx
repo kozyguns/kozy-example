@@ -204,6 +204,18 @@ const HeaderUser = React.memo(() => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mr-2">
+                <DropdownMenuItem>
+                    <Link
+                      href="/team/employees/profiles"
+                      className="flex items-center w-full"
+                    >
+                      <PersonIcon className="mr-2 h-4 w-4" />
+                      <span>Manage Your Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+                  
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <ShadowIcon className="mr-2 h-4 w-4" />
