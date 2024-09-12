@@ -218,11 +218,11 @@ export function EmployeeTableRowActions<TData>({
               <Input
                 id="rank"
                 type="number"
-                value={editedEmployee.rank || ""}
+                value={editedEmployee.employee_number || ""}
                 onChange={(e) =>
                   setEditedEmployee({
                     ...editedEmployee,
-                    rank: parseInt(e.target.value) || null,
+                    employee_number: parseInt(e.target.value) || null,
                   })
                 }
                 className="col-span-3"
@@ -233,7 +233,7 @@ export function EmployeeTableRowActions<TData>({
                 Pay Type
               </Label>
               <Select
-                value={editedEmployee.pay_type}
+                value={editedEmployee.pay_type || ""}
                 onValueChange={(value) =>
                   setEditedEmployee({
                     ...editedEmployee,

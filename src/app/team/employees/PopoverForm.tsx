@@ -95,12 +95,12 @@ export function PopoverForm({ employee, onSave }: PopoverFormProps) {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="rank">Rank</Label>
+              <Label htmlFor="rank">Employee Number</Label>
               <Input
                 id="rank"
                 name="rank"
                 type="number"
-                value={editedEmployee.rank || ""}
+                value={editedEmployee.employee_number || ""}
                 onChange={handleInputChange}
               />
             </div>
