@@ -1,7 +1,7 @@
 "use client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Row } from "@tanstack/react-table";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/utils/supabase/client";
 import { ScheduleData } from "./data-schema";
+import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 
 interface ScheduleRowActionsProps<TData> {
   row: Row<TData>;
@@ -26,6 +27,42 @@ export function ScheduleRowActions<TData>({
   const schedule = row.original as ScheduleData;
   const [startTime, setStartTime] = useState(schedule.start_time || "");
   const [endTime, setEndTime] = useState(schedule.end_time || "");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error.message);
+        return;
+      }
+
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from("employees")
+          .select("role")
+          .eq("user_uuid", user.id)
+          .single();
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError.message);
+          return;
+        }
+
+        // console.log("Role from profiles table:", profile?.role);
+
+        const isSuperAdmin =
+          profile?.role?.toLowerCase().trim() === "super admin";
+        setIsSuperAdmin(isSuperAdmin);
+        // console.log("Is super admin (after lowercase and trim):", isSuperAdmin);
+      }
+    };
+
+    checkUserRole();
+  }, []);
 
   const handleUpdate = async (field: string, value: any) => {
     // console.log(`Updating ${field} to ${value} for schedule ID ${schedule.id}`);
@@ -99,26 +136,28 @@ export function ScheduleRowActions<TData>({
         </DropdownMenuItem>
         <DropdownMenuSeparator className="my-2" />
         <DropdownMenuItem onClick={applyChanges}>Apply</DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={async () => {
-            const confirmed = confirm(
-              "Are you sure you want to delete this schedule?"
-            );
-            if (confirmed) {
-              const { error } = await supabase
-                .from("reference_schedules")
-                .delete()
-                .eq("id", schedule.id);
-              if (error) {
-                console.error("Error deleting schedule:", error);
-              } else {
-                fetchReferenceSchedules();
+        {isSuperAdmin && (
+          <DropdownMenuItem
+            onClick={async () => {
+              const confirmed = confirm(
+                "Are you sure you want to delete this schedule?"
+              );
+              if (confirmed) {
+                const { error } = await supabase
+                  .from("reference_schedules")
+                  .delete()
+                  .eq("id", schedule.id);
+                if (error) {
+                  console.error("Error deleting schedule:", error);
+                } else {
+                  fetchReferenceSchedules();
+                }
               }
-            }
-          }}
-        >
-          Delete
-        </DropdownMenuItem>
+            }}
+          >
+            Delete
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

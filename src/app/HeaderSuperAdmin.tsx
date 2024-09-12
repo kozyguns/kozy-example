@@ -15,6 +15,7 @@ import {
   MoonIcon,
   ShadowIcon,
   Pencil2Icon,
+  DashboardIcon,
 } from "@radix-ui/react-icons";
 import {
   NavigationMenu,
@@ -508,6 +509,10 @@ const HeaderSuperAdmin = React.memo(() => {
     },
   ];
 
+  const handleLinkClick = (href: string) => {
+    router.push(href);
+  };
+
   return (
     <RoleBasedWrapper allowedRoles={["super admin"]}>
       <header className="flex justify-between items-center p-2">
@@ -628,25 +633,18 @@ const HeaderSuperAdmin = React.memo(() => {
                 <DropdownMenuContent className="w-56 mr-2">
                   <DropdownMenuLabel>Profile & Settings</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link
-                      href="/admin/domains"
-                      className="flex items-center w-full"
-                    >
-                      <Pencil2Icon className="mr-2 h-4 w-4" />
-                      <span>Manage Domains</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => handleLinkClick("/admin/domains")}
+                  >
+                    <Pencil2Icon className="mr-2 h-4 w-4" />
+                    <span>Manage Domains</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link
-                      href="/team/employees/profiles"
-                      className="flex items-center w-full"
-                    >
-                      <PersonIcon className="mr-2 h-4 w-4" />
-                      <span>Manage Your Profile</span>
-                    </Link>
+                  <DropdownMenuItem
+                    onSelect={() => handleLinkClick("/admin/reports/dashboard")}
+                  >
+                    <DashboardIcon className="mr-2 h-4 w-4" />
+                    <span>Admin Dashboard</span>
                   </DropdownMenuItem>
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleChatClick}>
                     <ChatBubbleIcon className="mr-2 h-4 w-4" />
@@ -659,7 +657,7 @@ const HeaderSuperAdmin = React.memo(() => {
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
-                  
+
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <ShadowIcon className="mr-2 h-4 w-4" />
@@ -686,8 +684,6 @@ const HeaderSuperAdmin = React.memo(() => {
                     Dark
                   </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
-
-                  
 
                   <DropdownMenuItem onClick={handleSignOut}>
                     Sign Out

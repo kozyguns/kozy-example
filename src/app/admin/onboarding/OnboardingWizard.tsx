@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
-import {toast} from "sonner";
+import { toast } from "sonner";
 
 type OnboardingData = {
   first_name: string;
@@ -30,9 +30,9 @@ type OnboardingData = {
   department: string;
   role: string;
   position: string;
-  employee_number: number;
-  pay_type: string;
-  pay_rate: number;
+  employee_number: number | null;
+  pay_type: string | null;
+  pay_rate: number | null;
   schedule: {
     [day: string]: { start_time: string; end_time: string };
   };
@@ -53,9 +53,9 @@ const initialData: OnboardingData = {
   department: "",
   role: "",
   position: "",
-  employee_number: 0,
+  employee_number: null,
   pay_type: "hourly",
-  pay_rate: 0,
+  pay_rate: null,
   schedule: {
     monday: { start_time: "", end_time: "" },
     tuesday: { start_time: "", end_time: "" },
@@ -87,29 +87,29 @@ const OnboardingWizard = () => {
     const fetchReferenceData = async () => {
       // Replace this with your actual Supabase query
       const { data: departments } = await supabase
-        .from('onboarding_references')
-        .select('option_value')
-        .eq('field_name', 'department')
-        .order('display_order');
+        .from("onboarding_references")
+        .select("option_value")
+        .eq("field_name", "department")
+        .order("display_order");
 
       const { data: positions } = await supabase
-        .from('onboarding_references')
-        .select('option_value')
-        .eq('field_name', 'position')
-        .order('display_order');
+        .from("onboarding_references")
+        .select("option_value")
+        .eq("field_name", "position")
+        .order("display_order");
 
       const { data: roles } = await supabase
-        .from('onboarding_references')
-        .select('option_value')
-        .eq('field_name', 'role')
-        .order('display_order');
+        .from("onboarding_references")
+        .select("option_value")
+        .eq("field_name", "role")
+        .order("display_order");
 
-        setReferenceData({
-          departments: departments?.map(d => d.option_value) || [],
-          positions: positions?.map(p => p.option_value) || [],
-          roles: roles?.map(r => r.option_value) || [],
-        });
-      };
+      setReferenceData({
+        departments: departments?.map((d) => d.option_value) || [],
+        positions: positions?.map((p) => p.option_value) || [],
+        roles: roles?.map((r) => r.option_value) || [],
+      });
+    };
 
     fetchReferenceData();
   }, []);
@@ -122,7 +122,7 @@ const OnboardingWizard = () => {
   const handlePrev = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const formatPhoneNumber = (input: string) => {
-    const cleaned = input.replace(/\D/g, '');
+    const cleaned = input.replace(/\D/g, "");
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
       return `${match[1]}-${match[2]}-${match[3]}`;
@@ -152,13 +152,23 @@ const OnboardingWizard = () => {
   const isStepComplete = () => {
     switch (step) {
       case 1:
-        return data.first_name.trim() !== "" && data.last_name.trim() !== "" && data.work_email.trim() !== "";
+        return (
+          data.first_name.trim() !== "" &&
+          data.last_name.trim() !== "" &&
+          data.work_email.trim() !== ""
+        );
       case 2:
-        return data.department !== "" && data.position !== "" && data.role !== "";
+        return (
+          data.department !== "" && data.position !== "" && data.role !== ""
+        );
       case 3:
-        return data.pay_type !== "" && data.pay_rate > 0;
+        return (
+          data.pay_type !== "" && data.pay_rate !== null && data.pay_rate > 0
+        );
       case 4:
-        return Object.values(data.schedule).some(day => day.start_time && day.end_time);
+        return Object.values(data.schedule).some(
+          (day) => day.start_time && day.end_time
+        );
       default:
         return false;
     }
@@ -265,7 +275,9 @@ const OnboardingWizard = () => {
                 id="promotion_date"
                 type="date"
                 value={data.promotion_date || ""}
-                onChange={(e) => updateData({ promotion_date: e.target.value || null })}
+                onChange={(e) =>
+                  updateData({ promotion_date: e.target.value || null })
+                }
               />
             </div>
           </div>
@@ -284,7 +296,9 @@ const OnboardingWizard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {referenceData.departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -300,7 +314,9 @@ const OnboardingWizard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {referenceData.positions.map((pos) => (
-                    <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                    <SelectItem key={pos} value={pos}>
+                      {pos}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -316,7 +332,9 @@ const OnboardingWizard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {referenceData.roles.map((role) => (
-                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -326,8 +344,10 @@ const OnboardingWizard = () => {
               <Input
                 id="employee_number"
                 type="number"
-                value={data.employee_number.toString()}
-                onChange={(e) => updateData({ employee_number: parseInt(e.target.value) || 0 })}
+                value={data.employee_number?.toString() || ""}
+                onChange={(e) =>
+                  updateData({ employee_number: parseInt(e.target.value) || 0 })
+                }
                 placeholder="0"
               />
             </div>
@@ -339,7 +359,7 @@ const OnboardingWizard = () => {
             <div className="space-y-2">
               <Label htmlFor="pay_type">Pay Type</Label>
               <Select
-                value={data.pay_type}
+                value={data.pay_type || ""}
                 onValueChange={(value) => updateData({ pay_type: value })}
               >
                 <SelectTrigger id="pay_type">
@@ -357,8 +377,10 @@ const OnboardingWizard = () => {
                 id="pay_rate"
                 type="number"
                 step="0.01"
-                value={data.pay_rate.toString()}
-                onChange={(e) => updateData({ pay_rate: parseFloat(e.target.value) || 0 })}
+                value={data.pay_rate?.toString() || ""}
+                onChange={(e) =>
+                  updateData({ pay_rate: parseFloat(e.target.value) || 0 })
+                }
                 placeholder="0.00"
               />
             </div>
@@ -382,13 +404,17 @@ const OnboardingWizard = () => {
                   id={`${day}-start`}
                   type="time"
                   value={times.start_time}
-                  onChange={(e) => handleTimeChange(day, "start_time", e.target.value)}
+                  onChange={(e) =>
+                    handleTimeChange(day, "start_time", e.target.value)
+                  }
                 />
                 <Input
                   id={`${day}-end`}
                   type="time"
                   value={times.end_time}
-                  onChange={(e) => handleTimeChange(day, "end_time", e.target.value)}
+                  onChange={(e) =>
+                    handleTimeChange(day, "end_time", e.target.value)
+                  }
                 />
               </div>
             ))}
@@ -401,7 +427,7 @@ const OnboardingWizard = () => {
 
   const saveEmployeeData = async (employeeData: Partial<OnboardingData>) => {
     const { data, error } = await supabase
-      .from('employees')
+      .from("employees")
       .insert({
         name: employeeData.first_name,
         last_name: employeeData.last_name,
@@ -424,14 +450,18 @@ const OnboardingWizard = () => {
       .select();
 
     if (error) {
-      console.error('Error saving employee data:', error);
+      console.error("Error saving employee data:", error);
       throw error;
     }
 
     return data[0];
   };
 
-  const saveScheduleData = async (employeeId: number, employeeName: string, scheduleData: OnboardingData['schedule']) => {
+  const saveScheduleData = async (
+    employeeId: number,
+    employeeName: string,
+    scheduleData: OnboardingData["schedule"]
+  ) => {
     const daysOfWeek = [
       "Monday",
       "Tuesday",
@@ -443,7 +473,9 @@ const OnboardingWizard = () => {
     ];
 
     for (const day of daysOfWeek) {
-      const times = scheduleData[day.toLowerCase() as keyof typeof scheduleData] || { start_time: null, end_time: null };
+      const times = scheduleData[
+        day.toLowerCase() as keyof typeof scheduleData
+      ] || { start_time: null, end_time: null };
 
       // First, try to select the existing record
       const { data: existingRecord, error: selectError } = await supabase
@@ -454,7 +486,10 @@ const OnboardingWizard = () => {
         .single();
 
       if (selectError && selectError.code !== "PGRST116") {
-        console.error(`Error checking existing record for ${day}:`, selectError);
+        console.error(
+          `Error checking existing record for ${day}:`,
+          selectError
+        );
         throw selectError;
       }
 
@@ -519,52 +554,53 @@ const OnboardingWizard = () => {
         state: data.state,
         zip: data.zip,
       };
-  
+
       const { data: newEmployee, error: employeeError } = await supabase
-        .from('employees')
+        .from("employees")
         .insert([employeeData])
         .select();
-  
+
       if (employeeError) {
-        console.error('Error inserting employee:', employeeError);
+        console.error("Error inserting employee:", employeeError);
         toast.error("Failed to add employee");
         return;
       }
-  
+
       if (!newEmployee || newEmployee.length === 0) {
-        console.error('No employee data returned after insertion');
+        console.error("No employee data returned after insertion");
         toast.error("Failed to add employee");
         return;
       }
-  
+
       // Save schedule data
-      const scheduleData = Object.entries(data.schedule).map(([day, times]) => ({
-        employee_id: newEmployee[0].employee_id,
-        day_of_week: day.charAt(0).toUpperCase() + day.slice(1),
-        start_time: times.start_time ? `${times.start_time}:00` : null,
-        end_time: times.end_time ? `${times.end_time}:00` : null,
-        name: newEmployee[0].name,
-      }));
-  
+      const scheduleData = Object.entries(data.schedule).map(
+        ([day, times]) => ({
+          employee_id: newEmployee[0].employee_id,
+          day_of_week: day.charAt(0).toUpperCase() + day.slice(1),
+          start_time: times.start_time ? `${times.start_time}:00` : null,
+          end_time: times.end_time ? `${times.end_time}:00` : null,
+          name: newEmployee[0].name,
+        })
+      );
+
       const { error: scheduleError } = await supabase
-        .from('reference_schedules')
+        .from("reference_schedules")
         .insert(scheduleData);
-  
+
       if (scheduleError) {
-        console.error('Error inserting schedule:', scheduleError);
+        console.error("Error inserting schedule:", scheduleError);
         toast.error("Failed to add employee schedule");
         return;
       }
-  
-      console.log('Onboarding completed successfully');
-      toast.success('Employee onboarded successfully with complete schedule');
-  
+
+      console.log("Onboarding completed successfully");
+      toast.success("Employee onboarded successfully with complete schedule");
+
       // Reset form or navigate to a success page
       setData(initialData);
       setStep(1);
-  
     } catch (error) {
-      console.error('Error during onboarding:', error);
+      console.error("Error during onboarding:", error);
       toast.error("An unexpected error occurred during onboarding");
     }
   };
@@ -618,6 +654,6 @@ const OnboardingWizard = () => {
       </form>
     </div>
   );
-}
+};
 
 export default OnboardingWizard;

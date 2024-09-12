@@ -592,7 +592,7 @@ const HeaderAdmin = React.memo(() => {
                 <DropdownMenuContent className="w-56 mr-2">
                   <DropdownMenuLabel>Profile & Settings</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  {/* <DropdownMenuItem>
                     <Link
                       href="/team/employees/profiles"
                       className="flex items-center w-full"
@@ -602,7 +602,7 @@ const HeaderAdmin = React.memo(() => {
                     </Link>
                   </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator /> */}
                   <DropdownMenuItem onClick={handleChatClick}>
                     <ChatBubbleIcon className="mr-2 h-4 w-4" />
                     <span>Messages</span>
@@ -633,8 +633,6 @@ const HeaderAdmin = React.memo(() => {
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
                   <DropdownMenuSeparator />
-
-                  
 
                   <DropdownMenuItem onClick={handleSignOut}>
                     Sign Out

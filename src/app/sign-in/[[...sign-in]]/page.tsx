@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
+import { login } from "@/lib/auth-actions"; // Import the login function
 
 const schema = z.object({
   email: z
@@ -47,46 +48,22 @@ export default function SignIn() {
   });
 
   const onSubmit = async (data: FormData) => {
-    const { email, password } = data;
-
     try {
-      const { data: signInData, error } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const formData = new FormData();
+      formData.append("email", data.email);
+      formData.append("password", data.password);
 
-      if (error) throw error;
+      const result = await login(formData);
 
-      if (signInData.user) {
-        const user = signInData.user;
-
-        // Fetch the customer's role from the customers table
-        const { data: customerData, error: fetchError } = await supabase
-          .from("customers")
-          .select("role")
-          .eq("user_uuid", user.id)
-          .single();
-
-        if (fetchError) {
-          console.error("Error fetching customer role:", fetchError.message);
-          toast.error("An error occurred. Please try again.");
-          return;
-        }
-
-        if (customerData) {
-          toast.success("Signed in successfully");
-          window.location.href = "/"; // Redirect to home page after sign-in
-        }
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.success) {
+        toast.success("Signed in successfully");
+        router.push("/"); // Redirect to home page after sign-in
       }
     } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error signing in:", error.message);
-        toast.error(error.message);
-      } else {
-        console.error("Unexpected error signing in:", error);
-        toast.error("Unexpected error occurred.");
-      }
+      console.error("Error signing in:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 

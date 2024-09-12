@@ -70,7 +70,7 @@ export default function ApproveRequestsPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log("Fetched and sorted data:", data);
+      // console.log("Fetched and sorted data:", data);
       setRequests(data);
     } catch (error: any) {
       console.error("Failed to fetch time off requests:", error.message);
@@ -204,7 +204,7 @@ export default function ApproveRequestsPage() {
       }
 
       const result = await response.json();
-      console.log("Email sent successfully:", result);
+      // console.log("Email sent successfully:", result);
     } catch (error: any) {
       console.error("Failed to send email:", error.message);
     }
@@ -283,12 +283,6 @@ export default function ApproveRequestsPage() {
           : "Time Off Request Status Update";
 
       if (action !== "pending") {
-        console.log("Sending email with:", {
-          email: request.email,
-          subject,
-          templateName,
-          templateData,
-        });
         await sendEmail(request.email, subject, templateName, templateData);
       }
 
@@ -321,7 +315,7 @@ export default function ApproveRequestsPage() {
       }
 
       const result = await response.json();
-      console.log("API response:", result);
+      // console.log("API response:", result);
       const { employee_id, start_date, end_date, email } = result;
       if (!email) {
         throw new Error("Email not found in API response");

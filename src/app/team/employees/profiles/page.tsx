@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 type EmployeeProfileData = {
   name: string;
@@ -32,7 +33,9 @@ export default function EmployeeProfilePage() {
 
         const { data: employeeData, error } = await supabase
           .from("employees")
-          .select("name, last_name, phone_number, street_address, city, state, zip")
+          .select(
+            "name, last_name, phone_number, street_address, city, state, zip"
+          )
           .eq("user_uuid", userData.user?.id)
           .single();
 
@@ -44,7 +47,9 @@ export default function EmployeeProfilePage() {
 
         if (employeeData) {
           // Type-safe way to set form values
-          (Object.keys(employeeData) as Array<keyof EmployeeProfileData>).forEach((key) => {
+          (
+            Object.keys(employeeData) as Array<keyof EmployeeProfileData>
+          ).forEach((key) => {
             setValue(key, employeeData[key]);
           });
         }
@@ -96,14 +101,14 @@ export default function EmployeeProfilePage() {
               <div className="flex items-center justify-between">
                 <div className="w-full">
                   <Label htmlFor={field.id}>{field.label}</Label>
-                  <input
+                  <Input
                     id={field.id}
                     {...register(field.id as keyof EmployeeProfileData)}
                     className="block w-full mt-1 p-2 border rounded"
                   />
                 </div>
               </div>
-              <Separator />
+              {/* <Separator /> */}
             </div>
           ))}
           <div className="flex justify-end">

@@ -27,8 +27,6 @@ import {
 import { VerificationForm } from "./verification-form";
 import EditFirearmForm from "./EditFirearmForm";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils"; // Make sure this import is available
-import { Input } from "@/components/ui/input";
 
 interface DataTableRowActionsProps {
   row: Row<FirearmsMaintenanceData>;
@@ -264,7 +262,7 @@ export function DataTableRowActions({
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
-          <DropdownMenuSeparator />
+          {/* <DropdownMenuSeparator /> */}
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>Gunsmithing</DropdownMenuSubTrigger>
             <DropdownMenuSubContent>

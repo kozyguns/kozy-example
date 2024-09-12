@@ -100,7 +100,7 @@ export default function FirearmsChecklist() {
         )
       );
 
-      // Fetch gunsmith and admin emails REMEMBER TO CHANGE THIS TO THE APPROPRIATE ROLES *************
+      // Fetch gunsmith and admin emails
       const { data: employees, error: employeesError } = await supabase
         .from("employees")
         .select("contact_info, role")
@@ -411,7 +411,10 @@ export default function FirearmsChecklist() {
 
       // Step 2: Check if all firearms are verified or with the gunsmith
       const allFirearmsHandled = data.every(
-        (item) => item.notes === "Verified" || item.notes === "With Gunsmith"
+        (item) =>
+          item.notes === "Verified" ||
+          item.notes === "With Gunsmith" ||
+          item.notes === "Inspection Requested"
       );
 
       if (!allFirearmsHandled) {
@@ -422,11 +425,12 @@ export default function FirearmsChecklist() {
         return;
       }
 
-      // Step 3: Filter firearms where rental_notes is "With Gunsmith" and verified_status is null or empty
+      // Step 3: Filter firearms where rental_notes is "With Gunsmith" or "Inspection Requested" and verified_status is null or empty
       const firearmsToSubmit = data.filter(
         (item) =>
-          (!item.verified_status || item.verified_status.trim() === "") &&
-          item.notes === "With Gunsmith"
+          ((!item.verified_status || item.verified_status.trim() === "") &&
+            item.notes === "With Gunsmith") ||
+          item.notes === "Inspection Requested"
       );
 
       if (firearmsToSubmit.length === 0) {

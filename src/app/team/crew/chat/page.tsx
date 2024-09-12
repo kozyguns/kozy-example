@@ -1134,25 +1134,25 @@ function ChatContent() {
       }
 
       // Send initial message
-    const initialMessage = "Group chat created";
-    const { data: sentMessage, error: sendError } = await supabase
-      .from("group_chat_messages")
-      .insert([
-        {
-          group_chat_id: newGroupChat.id,
-          sender_id: user.id,
-          message: initialMessage,
-          created_at: new Date().toISOString(),
-          read_by: [user.id],
-        },
-      ])
-      .select();
+      const initialMessage = "Group chat created";
+      const { data: sentMessage, error: sendError } = await supabase
+        .from("group_chat_messages")
+        .insert([
+          {
+            group_chat_id: newGroupChat.id,
+            sender_id: user.id,
+            message: initialMessage,
+            created_at: new Date().toISOString(),
+            read_by: [user.id],
+          },
+        ])
+        .select();
 
-    if (sendError) {
-      console.error("Error sending initial message:", sendError.message);
-    } else if (sentMessage) {
-      setMessages((prev) => [...prev, sentMessage[0]]);
-    }
+      if (sendError) {
+        console.error("Error sending initial message:", sendError.message);
+      } else if (sentMessage) {
+        setMessages((prev) => [...prev, sentMessage[0]]);
+      }
 
       scrollToBottom();
     }
@@ -1355,36 +1355,37 @@ function ChatContent() {
     }, {});
   };
 
-const handleMessageChange = useCallback(
-  (payload: any, chatType: string) => {
-    console.log(`${chatType} message change:`, payload);
+  const handleMessageChange = useCallback(
+    (payload: any, chatType: string) => {
+      console.log(`${chatType} message change:`, payload);
 
-    if (payload.eventType === "INSERT") {
-      const newMessage = payload.new;
-      const isCurrentChat =
-        (chatType === "group" &&
-          selectedChat === `group_${newMessage.group_chat_id}`) ||
-        (chatType === "direct" &&
-          (newMessage.sender_id === selectedChat ||
-            newMessage.receiver_id === selectedChat));
+      if (payload.eventType === "INSERT") {
+        const newMessage = payload.new;
+        const isCurrentChat =
+          (chatType === "group" &&
+            selectedChat === `group_${newMessage.group_chat_id}`) ||
+          (chatType === "direct" &&
+            (newMessage.sender_id === selectedChat ||
+              newMessage.receiver_id === selectedChat));
 
-      setMessages((prevMessages) => {
-        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
-          return prevMessages;
-        }
-        const updatedMessages = [...prevMessages, newMessage];
-        if (isCurrentChat) {
-          scrollToBottom();
-        }
-        return updatedMessages;
-      });
+        setMessages((prevMessages) => {
+          if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+            return prevMessages;
+          }
+          const updatedMessages = [...prevMessages, newMessage];
+          if (isCurrentChat) {
+            scrollToBottom();
+          }
+          return updatedMessages;
+        });
 
-      if (newMessage.sender_id !== user.id) {
-        const isChatActiveNow = localStorage.getItem("isChatActive") === "true";
-        const shouldIncrementUnread = !isChatActiveNow || !isCurrentChat;
+        if (newMessage.sender_id !== user.id) {
+          const isChatActiveNow =
+            localStorage.getItem("isChatActive") === "true";
+          const shouldIncrementUnread = !isChatActiveNow || !isCurrentChat;
 
-        if (shouldIncrementUnread) {
-          if (chatType === "direct" && newMessage.receiver_id === user.id) {
+          if (shouldIncrementUnread) {
+            if (chatType === "direct" && newMessage.receiver_id === user.id) {
               const senderId = newMessage.sender_id;
               if (typeof senderId === "string") {
                 setUnreadStatus((prevStatus) => ({
@@ -1426,15 +1427,15 @@ const handleMessageChange = useCallback(
     },
     [
       selectedChat,
-    user?.id,
-    dmUsers,
-    fetchSender,
-    fetchUnreadCounts,
-    scrollToBottom,
-    setMessages,
-    setUnreadStatus,
-    setUnreadCounts,
-    setTotalUnreadCount,
+      user?.id,
+      dmUsers,
+      fetchSender,
+      fetchUnreadCounts,
+      scrollToBottom,
+      setMessages,
+      setUnreadStatus,
+      setUnreadCounts,
+      setTotalUnreadCount,
     ]
   );
 
@@ -1738,7 +1739,7 @@ const handleMessageChange = useCallback(
       <RoleBasedWrapper
         allowedRoles={["gunsmith", "admin", "super admin", "auditor"]}
       >
-        <Card className="flex flex-col h-[80vh] max-h-[80vh] max-w-6xl p-4 mx-auto mb-4 overflow-hidden">
+        <Card className="flex flex-col h-[80vh] max-h-[80vh] max-w-6xl p-4 my-12 mx-auto mb-4 overflow-hidden">
           <CardTitle className="p-4 border-b border-gray-200 dark:border-gray-800">
             <TextGenerateEffect words={title} />
           </CardTitle>

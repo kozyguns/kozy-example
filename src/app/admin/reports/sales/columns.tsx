@@ -1,10 +1,12 @@
 // src/app\admin\reports\sales\columns.tsx
 
-import { format } from "date-fns";
+// import { format } from "date-fns";
 import { ColumnDef as BaseColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "./data-table-column-header";
 import SalesTableRowActions from "./sales-table-row-actions";
 import { includesArrayString } from "./custom-filter";
+import { compareAsc, format, parseISO } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 
 export interface SalesData {
   id: number;
@@ -42,6 +44,7 @@ export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
   meta?: {
     style?: React.CSSProperties;
   };
+  initial?: boolean;
 };
 
 export const salesColumns = (
@@ -65,15 +68,17 @@ export const salesColumns = (
       style: { width: "150px" },
     },
   },
-  {
-    accessorKey: "Sku",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Sku" />
-    ),
-    meta: {
-      style: { width: "200px" },
-    },
-  },
+  // {
+  //   accessorKey: "Sku",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Sku" />
+  //   ),
+  //   meta: {
+  //     style: { width: "200px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
   {
     accessorKey: "Desc",
     header: ({ column }) => (
@@ -83,33 +88,39 @@ export const salesColumns = (
       style: { width: "200px" },
     },
   },
-  {
-    accessorKey: "SoldPrice",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Sold Price" />
-    ),
-    meta: {
-      style: { width: "100px" },
-    },
-  },
-  {
-    accessorKey: "SoldQty",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Sold Qty" />
-    ),
-    meta: {
-      style: { width: "100px" },
-    },
-  },
-  {
-    accessorKey: "Cost",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Cost" />
-    ),
-    meta: {
-      style: { width: "100px" },
-    },
-  },
+  // {
+  //   accessorKey: "SoldPrice",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Sold Price" />
+  //   ),
+  //   meta: {
+  //     style: { width: "100px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
+  // {
+  //   accessorKey: "SoldQty",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Sold Qty" />
+  //   ),
+  //   meta: {
+  //     style: { width: "100px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
+  // {
+  //   accessorKey: "Cost",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Cost" />
+  //   ),
+  //   meta: {
+  //     style: { width: "100px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
   {
     accessorKey: "Acct",
     header: ({ column }) => (
@@ -118,34 +129,49 @@ export const salesColumns = (
     meta: {
       style: { width: "100px" },
     },
+    enableHiding: true,
+    initial: false,
   },
   {
     accessorKey: "Date",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date" />
     ),
-    cell: ({ row }) => format(new Date(row.original.Date), "MM-dd-yyyy"), // Format the date here
+    cell: ({ row }) => {
+      const originalDate = row.original.Date;
+      const parsedDate = parseISO(originalDate);
+      const utcDate = toZonedTime(parsedDate, "UTC");
+
+      // console.log('Original date:', originalDate, 'Parsed UTC date:', utcDate);
+
+      return format(utcDate, "MM/dd/yyyy");
+    },
     meta: {
       style: { width: "120px" },
     },
-    sortingFn: "datetime",
+    sortingFn: (rowA, rowB, columnId) => {
+      const dateA = parseISO(rowA.original.Date);
+      const dateB = parseISO(rowB.original.Date);
+      return compareAsc(dateA, dateB);
+    },
     filterFn: (row, columnId, filterValue) => {
-      const formattedDate = format(
-        new Date(row.getValue(columnId)),
-        "yyyy-MM-dd"
-      );
+      const date = parseISO(row.getValue(columnId));
+      const utcDate = toZonedTime(date, "UTC");
+      const formattedDate = format(utcDate, "yyyy-MM-dd");
       return formattedDate.includes(filterValue);
     },
   },
-  {
-    accessorKey: "Last",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Last" />
-    ),
-    meta: {
-      style: { width: "150px" },
-    },
-  },
+  // {
+  //   accessorKey: "Last",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Last" />
+  //   ),
+  //   meta: {
+  //     style: { width: "150px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
   {
     accessorKey: "LastName",
     header: ({ column }) => (
@@ -155,24 +181,28 @@ export const salesColumns = (
       style: { width: "150px" },
     },
   },
-  {
-    accessorKey: "Mfg",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Mfg" />
-    ),
-    meta: {
-      style: { width: "150px" },
-    },
-  },
-  {
-    accessorKey: "CustType",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="CustType" />
-    ),
-    meta: {
-      style: { width: "150px" },
-    },
-  },
+  // {
+  //   accessorKey: "Mfg",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Mfg" />
+  //   ),
+  //   meta: {
+  //     style: { width: "150px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
+  // {
+  //   accessorKey: "CustType",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="CustType" />
+  //   ),
+  //   meta: {
+  //     style: { width: "150px" },
+  //   },
+  //   enableHiding: true,
+  //   initial: false,
+  // },
   {
     accessorKey: "category_label",
     header: ({ column }) => (
@@ -199,6 +229,8 @@ export const salesColumns = (
     meta: {
       style: { width: "150px" },
     },
+    enableHiding: true,
+    initial: false,
   },
   {
     accessorKey: "total_net",
@@ -208,5 +240,7 @@ export const salesColumns = (
     meta: {
       style: { width: "150px" },
     },
+    enableHiding: true,
+    initial: false,
   },
 ];

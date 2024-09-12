@@ -515,7 +515,7 @@ const ManageSchedules = () => {
         console.error("Error adding/updating timesheet entry:", result.error);
         toast.error("Failed to add/update timesheet entry");
       } else {
-        console.log("Timesheet entry added/updated successfully:", result.data);
+        // console.log("Timesheet entry added/updated successfully:", result.data);
         fetchTimesheets();
         toast.success("Timesheet entry added/updated successfully");
       }
@@ -540,7 +540,7 @@ const ManageSchedules = () => {
       toast.error("Employee not found");
       return;
     }
-  
+
     if (date && startTime && endTime) {
       const daysOfWeek = [
         "Sunday",
@@ -552,11 +552,11 @@ const ManageSchedules = () => {
         "Saturday",
       ];
       const dayOfWeek = daysOfWeek[new Date(date + "T00:00:00").getDay()];
-  
+
       const formattedStartTime =
         startTime.length === 5 ? `${startTime}:00` : startTime;
       const formattedEndTime = endTime.length === 5 ? `${endTime}:00` : endTime;
-  
+
       const scheduleData = {
         employee_id: employee.employee_id,
         schedule_date: date,
@@ -566,20 +566,20 @@ const ManageSchedules = () => {
         status: "added_day",
         name: employeeName,
       };
-  
+
       // Check if a schedule already exists for this employee and date
       const { data: existingSchedule, error: fetchError } = await supabase
         .from("schedules")
         .select()
         .match({ employee_id: employee.employee_id, schedule_date: date })
         .single();
-  
-      if (fetchError && fetchError.code !== 'PGRST116') {
+
+      if (fetchError && fetchError.code !== "PGRST116") {
         console.error("Error fetching existing schedule:", fetchError);
         toast.error("Failed to check existing schedule");
         return;
       }
-  
+
       let result;
       if (existingSchedule) {
         // Update existing schedule
@@ -590,17 +590,14 @@ const ManageSchedules = () => {
           .select();
       } else {
         // Insert new schedule
-        result = await supabase
-          .from("schedules")
-          .insert(scheduleData)
-          .select();
+        result = await supabase.from("schedules").insert(scheduleData).select();
       }
-  
+
       if (result.error) {
         console.error("Error adding/updating schedule:", result.error);
         toast.error("Failed to add/update schedule");
       } else {
-        console.log("Schedule added/updated successfully:", result.data);
+        // console.log("Schedule added/updated successfully:", result.data);
         fetchActualSchedules();
         toast.success("Schedule added/updated successfully");
       }
@@ -808,7 +805,7 @@ const ManageSchedules = () => {
 
           <TabsContent value="timesheets">
             <CardContent>
-            <div className="grid p-2 gap-4 md:grid-cols-2 lg:grid-cols-5">
+              <div className="grid p-2 gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card>
                   <CardHeader>
                     <h2 className="text-lg font-bold">Add Timesheet Entry</h2>
@@ -821,7 +818,7 @@ const ManageSchedules = () => {
                   </CardContent>
                 </Card>
               </div>
-              
+
               <TimesheetDataTable
                 columns={timesheetColumns}
                 data={timesheets}
