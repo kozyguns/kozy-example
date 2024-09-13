@@ -20,6 +20,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { login } from "@/lib/auth-actions"; // Import the login function
+import { Separator } from "@/components/ui/separator";
 
 const schema = z.object({
   email: z
@@ -176,9 +177,10 @@ export default function SignIn() {
                     </span>
                   )}
                 </div>
-                <Button variant="linkHover1" type="submit" className="w-full">
+                <Button variant="gooeyRight" type="submit" className="w-full mb-4">
                   Sign In With Email
                 </Button>
+                <Separator className="my-4" />
                 {/* <Label htmlFor="email">OR</Label> */}
                 <Button
                   onClick={() => loginWithOAuth("google")}
