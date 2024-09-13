@@ -200,6 +200,29 @@ const reportsComps = [
   },
 ];
 
+const docsComps = [
+  {
+    title: "Help Docs",
+    href: "/help",
+    description: "Help Docs",
+  },
+  {
+    title: "System Docs",
+    href: "/docs",
+    description: "Guide Docs",
+  },
+  {
+    title: "System Support Docs",
+    href: "/docs",
+    description: "Comprehensive Guide Docs",
+  },
+  {
+    title: "Features Page",
+    href: "/public/features",
+    description: "Overview Of Features",
+  },
+];
+
 const manageComps = [
   {
     title: "Staff Profiles",
@@ -567,10 +590,10 @@ const HeaderSuperAdmin = React.memo(() => {
               </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuTrigger>SOPs</NavigationMenuTrigger>
+              <NavigationMenuTrigger>Docs</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                  {sopComps.map((component) => (
+                  {docsComps.map((component) => (
                     <ListItem
                       key={component.title}
                       title={component.title}
