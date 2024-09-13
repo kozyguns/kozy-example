@@ -206,11 +206,11 @@ const docsComps = [
     href: "/help",
     description: "Help Docs",
   },
-  {
-    title: "System Docs",
-    href: "/docs",
-    description: "Guide Docs",
-  },
+  // {
+  //   title: "System Docs",
+  //   href: "/docs",
+  //   description: "Guide Docs",
+  // },
   {
     title: "System Support Docs",
     href: "/docs",

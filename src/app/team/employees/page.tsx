@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/utils/supabase/client";
 import { Employee } from "./types";
 import { DataTable } from "./data-table";
@@ -13,7 +13,6 @@ import AddEmployeeDialog from "./add-employee-dialog";
 import { Button } from "@/components/ui/button";
 import { PlusCircledIcon } from "@radix-ui/react-icons";
 
-// Add this interface if not already defined
 interface WeeklySchedule {
   [day: string]: { start_time: string | null; end_time: string | null };
 }
@@ -56,11 +55,11 @@ export default function EmployeesPage() {
       toast.error("Failed to add employee");
     } else {
       toast.success("Employee added successfully");
-      await fetchEmployees(); // Refresh the employee list
+      setEmployees((prevEmployees) => [...prevEmployees, data[0] as Employee]);
     }
   };
 
-  const handleEditEmployee = async (updatedEmployee: Employee) => {
+  const handleEditEmployee = useCallback(async (updatedEmployee: Employee) => {
     const { error } = await supabase
       .from("employees")
       .update(updatedEmployee)
@@ -68,13 +67,18 @@ export default function EmployeesPage() {
 
     if (error) {
       console.error("Error updating employee:", error);
-      throw error; // This will be caught in the EmployeeTableRowActions component
+      toast.error("Failed to update employee");
     } else {
-      await fetchEmployees(); // Refresh the employee list
+      setEmployees((prevEmployees) =>
+        prevEmployees.map((emp) =>
+          emp.employee_id === updatedEmployee.employee_id ? updatedEmployee : emp
+        )
+      );
+      // toast.success("Employee updated successfully");
     }
-  };
+  }, []);
 
-  const handleDeleteEmployee = async (employeeId: number) => {
+  const handleDeleteEmployee = useCallback(async (employeeId: number) => {
     const { error } = await supabase
       .from("employees")
       .delete()
@@ -82,13 +86,16 @@ export default function EmployeesPage() {
 
     if (error) {
       console.error("Error deleting employee:", error);
-      throw error; // This will be caught in the EmployeeTableRowActions component
+      toast.error("Failed to delete employee");
     } else {
-      await fetchEmployees(); // Refresh the employee list
+      setEmployees((prevEmployees) =>
+        prevEmployees.filter((emp) => emp.employee_id !== employeeId)
+      );
+      toast.success("Employee deleted successfully");
     }
-  };
+  }, []);
 
-  const handleUpdateSchedule = async (
+  const handleUpdateSchedule = useCallback(async (
     employeeId: number,
     schedules: WeeklySchedule
   ) => {
@@ -111,7 +118,6 @@ export default function EmployeesPage() {
     for (const day of daysOfWeek) {
       const times = schedules[day] || { start_time: null, end_time: null };
 
-      // First, try to select the existing record
       const { data: existingRecord, error: selectError } = await supabase
         .from("reference_schedules")
         .select("*")
@@ -132,7 +138,6 @@ export default function EmployeesPage() {
 
       let error;
       if (existingRecord) {
-        // If record exists, update it
         const { error: updateError } = await supabase
           .from("reference_schedules")
           .update({
@@ -143,11 +148,9 @@ export default function EmployeesPage() {
           .eq("id", existingRecord.id);
         error = updateError;
       } else {
-        // If record doesn't exist, insert a new one
         const { error: insertError } = await supabase
           .from("reference_schedules")
           .insert({
-            id: existingRecord?.id,
             employee_id: employeeId,
             day_of_week: day,
             start_time: times.start_time,
@@ -159,21 +162,13 @@ export default function EmployeesPage() {
 
       if (error) {
         console.error(`Error updating/inserting schedule for ${day}:`, error);
-        console.log("Attempted operation:", {
-          employee_id: employeeId,
-          day_of_week: day,
-          start_time: times.start_time,
-          end_time: times.end_time,
-          name: employee.name,
-        });
         toast.error(`Failed to update schedule for ${day}: ${error.message}`);
         return;
       }
     }
 
     toast.success(`Updated schedule for ${employee.name}`);
-    await fetchEmployees();
-  };
+  }, [employees]);
 
   const tableColumns = useMemo(
     () =>

@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/table"
 import { DataTablePagination } from "./data-table-pagination"
 import { EmployeeTableToolbar } from "./employee-table-toolbar"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import classNames from "classnames"
+import styles from "./table.module.css"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -42,7 +45,16 @@ export function DataTable<TData, TValue>({
     <div>
       <EmployeeTableToolbar table={table} />
       <div className="rounded-md border">
-        <Table>
+      <div className="flex-1 overflow-hidden max-h-full rounded-md border w-full sm:w-full md:w-full lg:min-w-8xl lg:max-w-8xl">
+        <div className="overflow-hidden">
+          
+            <Table className="w-full overflow-hidden">
+            <ScrollArea
+            className={classNames(
+              styles.noScroll,
+              "h-[calc(100vh-400px)] w-[calc(100vw-10px)] overflow-auto"
+            )}
+          >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -61,7 +73,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="overflow-hidden">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
@@ -69,7 +81,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="overflow-hidden">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -83,7 +95,13 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
+          <ScrollBar orientation="horizontal" />
+        <ScrollBar orientation="vertical" />
+        </ScrollArea>
         </Table>
+        
+        </div>
+        </div>
       </div>
       <DataTablePagination table={table} />
     </div>

@@ -1,31 +1,32 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Employee } from "./types";
 import { DataTableColumnHeader } from "./data-table-column-header";
-import { EmployeeTableRowActions } from "./employee-table-row-actions";
 
 export const columns: ColumnDef<Employee>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Name" />
+      <DataTableColumnHeader column={column} title="First Name" />
+    ),
+  },
+  {
+    accessorKey: "last_name",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Last Name" />
     ),
   },
   {
     accessorKey: "department",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Department" />
+    ),
+  },
+  {
+    accessorKey: "position",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Position" />
     ),
   },
   {
@@ -38,6 +39,10 @@ export const columns: ColumnDef<Employee>[] = [
     accessorKey: "contact_info",
     header: "Contact Info",
   },
+  // {
+  //   accessorKey: "phone_number",
+  //   header: "Phone Number",
+  // },
   {
     accessorKey: "pay_type",
     header: "Pay Type",
@@ -48,51 +53,41 @@ export const columns: ColumnDef<Employee>[] = [
       <DataTableColumnHeader column={column} title="Pay Rate" />
     ),
     cell: ({ row }) => {
-      const pay_rate = row.getValue("pay_rate");
-      //   console.log("Full row data:", row.original);
-      //   console.log("Pay rate value:", pay_rate, typeof pay_rate);
-
-      if (pay_rate === null || pay_rate === undefined) return "";
-
-      const numericPayRate = parseFloat(pay_rate as string);
-      if (isNaN(numericPayRate)) return "Invalid";
-
-      if (numericPayRate >= 1000) {
-        // Assume it's a salary
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        }).format(numericPayRate);
-        return <div className="text-left font-medium">{formatted}/year</div>;
-      } else {
-        // Assume it's hourly
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(numericPayRate);
-        return <div className="text-left font-medium">{formatted}/hour</div>;
-      }
+      const pay_rate = parseFloat(row.getValue("pay_rate"));
+      const pay_type = row.getValue("pay_type");
+      
+      if (isNaN(pay_rate)) return "Invalid";
+      
+      const formatted = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(pay_rate);
+      
+      return (
+        <div className="text-left font-medium">
+          {formatted}/{pay_type === "salary" ? "year" : "hour"}
+        </div>
+      );
     },
   },
   {
     accessorKey: "hire_date",
-
     header: "Hire Date",
   },
-
   {
     accessorKey: "birthday",
-
     header: "Birthday",
   },
-  {
-    accessorKey: "rank",
-    header: "Rank",
-  },
+  // {
+  //   accessorKey: "promotion_date",
+  //   header: "Promotion Date",
+  // },
+  // {
+  //   accessorKey: "rank",
+  //   header: "Employee Number",
+  // },
   {
     id: "actions",
     header: "Actions",
