@@ -56,20 +56,22 @@ export default function AddEmployeeDialog({
     {
       name: "",
       last_name: "",
-      department: "",
-      role: "",
-      contact_info: "",
+      work_email: "",
       phone_number: "",
       street_address: "",
       city: "",
       state: "",
       zip: "",
-      pay_type: "",
+      department: "",
+      role: "",
+      position: "",
+      contact_info: "",
+      pay_type: null,
       employee_number: null,
       pay_rate: null,
-      hire_date: "", // Add this line
-      promotion_date: "",
-      birthday: "", // Add this line
+      hire_date: null,
+      birthday: null,
+      promotion_date: null,
     }
   );
 
@@ -178,20 +180,22 @@ export default function AddEmployeeDialog({
       setNewEmployee({
         name: "",
         last_name: "",
-        department: "",
-        role: "",
-        contact_info: "",
+        work_email: "",
         phone_number: "",
         street_address: "",
         city: "",
         state: "",
         zip: "",
-        pay_type: "",
+        department: "",
+        role: "",
+        position: "",
+        contact_info: "",
+        pay_type: null,
         employee_number: null,
         pay_rate: null,
-        hire_date: "",
-        promotion_date: "",
-        birthday: "",
+        hire_date: null,
+        birthday: null,
+        promotion_date: null,
       });
       setSchedule(initialSchedule);
       onClose();
