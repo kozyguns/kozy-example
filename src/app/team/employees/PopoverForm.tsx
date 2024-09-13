@@ -91,12 +91,12 @@ export function EditEmployeeDialog({ employee, onSave, isOpen, onClose }: EditEm
     setIsLoading(true);
     try {
       await onSave(editedEmployee);
-      onClose();
     } catch (error) {
       console.error("Error saving employee:", error);
       // Optionally, show an error message to the user
     } finally {
       setIsLoading(false);
+      onClose(); // Always close the dialog, whether save was successful or not
     }
   };
 
