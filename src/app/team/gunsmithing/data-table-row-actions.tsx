@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Row } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -46,16 +46,21 @@ export function DataTableRowActions({
   onUpdateFrequency,
   onDeleteFirearm,
 }: DataTableRowActionsProps) {
-    // Add this check at the beginning of the component
-    if (!row || !row.original) {
-      console.error("Row or row.original is undefined in DataTableRowActions");
-      return null; // or return a placeholder UI
-    }
-  const task = row.original;
   const [open, setOpen] = useState(false);
-  const [maintenanceNotes, setMaintenanceNotes] = useState(
-    task.maintenance_notes || ""
-  );
+  const [maintenanceNotes, setMaintenanceNotes] = useState("");
+
+  useEffect(() => {
+    if (row && row.original) {
+      setMaintenanceNotes(row.original.maintenance_notes || "");
+    }
+  }, [row]);
+
+  if (!row || !row.original) {
+    console.error("Row or row.original is undefined in DataTableRowActions");
+    return null; // or return a placeholder UI
+  }
+
+  const task = row.original;
 
   const handleStatusChange = async (status: string | null) => {
     const { error } = await supabase
