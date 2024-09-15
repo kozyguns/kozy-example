@@ -1,4 +1,4 @@
-// src/app/sales/orderreview/order-table-row-actions.tsx
+// src/app/team/support/inquiries/review/support-request-table-row-actions.tsx
 
 "use client";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
@@ -16,23 +16,19 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Order } from "./columns";
+import { SupportRequest } from "./columns";
 import { statuses } from "./data";
 
-interface OrderTableRowActionsProps<TData> {
+interface SupportRequestTableRowActionsProps<TData> {
   row: Row<TData>;
-  markAsContacted: (id: number) => void;
-  undoMarkAsContacted: (id: number) => void;
-  setStatus: (id: number, status: string) => void;
+  setStatus: (id: string, status: string) => void;
 }
 
-export function OrderTableRowActions<TData>({
+export function SupportRequestTableRowActions<TData>({
   row,
-  markAsContacted,
-  undoMarkAsContacted,
   setStatus,
-}: OrderTableRowActionsProps<TData>) {
-  const order = row.original as Order;
+}: SupportRequestTableRowActionsProps<TData>) {
+  const supportRequest = row.original as SupportRequest;
 
   return (
     <DropdownMenu>
@@ -46,19 +42,12 @@ export function OrderTableRowActions<TData>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem onClick={() => markAsContacted(order.id)}>
-          Mark as Contacted
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => undoMarkAsContacted(order.id)}>
-          Undo Mark As Contacted
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Set Status</DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup
-              value={order.status}
-              onValueChange={(status) => setStatus(order.id, status)}
+              value={supportRequest.status}
+              onValueChange={(status) => setStatus(supportRequest.id, status)}
             >
               {statuses.map((status) => (
                 <DropdownMenuRadioItem key={status.value} value={status.value}>
@@ -69,8 +58,8 @@ export function OrderTableRowActions<TData>({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setStatus(order.id, "")}>
-          Clear Status
+        <DropdownMenuItem onClick={() => setStatus(supportRequest.id, "pending")}>
+          Reset to Pending
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

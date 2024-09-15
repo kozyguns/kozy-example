@@ -1,0 +1,172 @@
+"use client";
+import { ColumnDef as BaseColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "../../../../admin/audits/review/data-table-column-header";
+import { SupportRequestTableRowActions } from "./support-request-table-row-actions";
+import { statuses, priorities, categories } from "./data";
+import { includesArrayString } from "./custom-filter";
+
+export type SupportRequest = {
+  id: string;
+  user_uuid: string;
+  name: string;
+  employee_email: string;
+  category: string;
+  inquiry_type: string;
+  phone: string;
+  email: string;
+  details: string;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  priority: string;
+};
+
+export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
+  TData,
+  TValue
+> & {
+  meta?: {
+    style?: React.CSSProperties;
+  };
+};
+
+// Add this type
+export type TableMeta = {
+  setStatus: (id: string, status: string) => void;
+};
+
+export const createColumns = (
+  setStatus: (id: string, status: string) => void
+): ColumnDef<SupportRequest>[] => [
+  {
+    accessorKey: "name",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Name" />
+    ),
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+  {
+    accessorKey: "category",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Category" />
+    ),
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+  {
+    accessorKey: "inquiry_type",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Inquiry Type" />
+    ),
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+  {
+    accessorKey: "email",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Email" />
+    ),
+    meta: {
+      style: { width: "200px" },
+    },
+  },
+  {
+    accessorKey: "phone",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Phone" />
+    ),
+    meta: {
+      style: { width: "180px" },
+    },
+  },
+  {
+    accessorKey: "details",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Details" />
+    ),
+    meta: {
+      style: { width: "250px" },
+    },
+  },
+  {
+    accessorKey: "created_at",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Date Submitted" />
+    ),
+    cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString(),
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+  {
+    accessorKey: "status",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
+    cell: ({ row }) => {
+      const status = statuses.find((s) => s.value === row.getValue("status"));
+      return status ? (
+        <div className="flex items-center">
+          <span>{status.label}</span>
+        </div>
+      ) : row.getValue("status");
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+  {
+    accessorKey: "category",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Category" />
+    ),
+    cell: ({ row }) => {
+      const category = categories.find(
+        (c) => c.value === row.getValue("category")
+      );
+      return category ? category.label : row.getValue("category");
+    },
+  },
+  {
+    accessorKey: "priority",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Priority" />
+    ),
+    cell: ({ row }) => {
+      const priority = priorities.find(
+        (p) => p.value === row.getValue("priority")
+      );
+      if (!priority) {
+        return null;
+      }
+      return (
+        <div className="flex items-center">
+          <span>{priority.label}</span>
+        </div>
+      );
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
+    },
+  },
+  {
+    accessorKey: "action",
+    header: "Action",
+    cell: ({ row, table }) => (
+      <SupportRequestTableRowActions
+        row={row}
+        setStatus={(table.options.meta as TableMeta).setStatus}
+      />
+    ),
+    meta: {
+      style: { width: "150px" },
+    },
+  },
+];

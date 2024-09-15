@@ -313,14 +313,14 @@ const comboComps = [
     description: "Report All Submitted Points",
   },
   {
-    title: "Submit Special Orders",
-    href: "/sales/orders",
-    description: "Submit Requests For Customers",
+    title: "Submit An Inquiry",
+    href: "/team/support/inquiries",
+    description: "Submit Support Inquiries",
   },
   {
-    title: "Special Orders Report",
-    href: "/sales/orderreview",
-    description: "View Submitted Orders",
+    title: "Inquiries Review",
+    href: "/team/support/inquiries/review",
+    description: "View & Update Inquiries",
   },
   {
     title: "Gunsmithing",

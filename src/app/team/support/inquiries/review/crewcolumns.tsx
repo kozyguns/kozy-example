@@ -1,26 +1,24 @@
+// src/app/team/support/inquiries/crewcolumns.tsx
+
 "use client";
 import { ColumnDef as BaseColumnDef } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "../../admin/audits/review/data-table-column-header";
-import { OrderTableRowActions } from "./order-table-row-actions";
-import { statuses } from "./data";
+import { DataTableColumnHeader } from "../../../../admin/audits/review/data-table-column-header";
+import { statuses, priorities, categories } from "./data";
 import { includesArrayString } from "./custom-filter";
 
-export type Order = {
-  is_read: any;
-  id: number;
-  employee: string;
-  employee_email: string; // Add this line
-  customer_type: string;
+export type SupportRequest = {
+  id: string;
+  employee_name: string;
+  employee_email: string;
+  category: string;
   inquiry_type: string;
-  customer_name: string;
   email: string;
   phone: string;
-  manufacturer: string;
-  item: string;
   details: string;
-  contacted: boolean;
   created_at: string;
+  updated_at: string;
   status: string;
+  priority: string;
 };
 
 export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
@@ -32,24 +30,25 @@ export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
   };
 };
 
-export const createColumns = (
-  setStatus: (id: number, status: string) => void,
-  markAsContacted: (id: number) => void
-): ColumnDef<Order>[] => [
+export const createColumns = (): ColumnDef<SupportRequest>[] => [
   {
-    accessorKey: "employee",
+    accessorKey: "employee_name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Employee" />
+      <DataTableColumnHeader column={column} title="Submitted By" />
     ),
     meta: {
       style: { width: "150px" },
     },
   },
   {
-    accessorKey: "customer_type",
+    accessorKey: "category",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Customer Type" />
+      <DataTableColumnHeader column={column} title="Category" />
     ),
+    cell: ({ row }) => {
+      const category = categories.find((c) => c.value === row.original.category);
+      return category ? category.label : row.original.category;
+    },
     meta: {
       style: { width: "150px" },
     },
@@ -64,15 +63,6 @@ export const createColumns = (
     },
   },
   {
-    accessorKey: "customer_name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Customer Name" />
-    ),
-    meta: {
-      style: { width: "200px" },
-    },
-  },
-  {
     accessorKey: "email",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Email" />
@@ -80,29 +70,12 @@ export const createColumns = (
     meta: {
       style: { width: "200px" },
     },
+    filterFn: includesArrayString,
   },
   {
     accessorKey: "phone",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Phone" />
-    ),
-    meta: {
-      style: { width: "180px" },
-    },
-  },
-  {
-    accessorKey: "manufacturer",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Manufacturer" />
-    ),
-    meta: {
-      style: { width: "150px" },
-    },
-  },
-  {
-    accessorKey: "item",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Item/Model" />
     ),
     meta: {
       style: { width: "150px" },
@@ -139,19 +112,16 @@ export const createColumns = (
     meta: {
       style: { width: "150px" },
     },
-    filterFn: includesArrayString,
   },
   {
-    accessorKey: "action",
-    header: "Action",
-    cell: ({ row }) => (
-      <OrderTableRowActions
-        row={row}
-        markAsContacted={markAsContacted}
-        undoMarkAsContacted={(id) => setStatus(id, "not_contacted")}
-        setStatus={setStatus}
-      />
+    accessorKey: "priority",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Priority" />
     ),
+    cell: ({ row }) => {
+      const priority = priorities.find((p) => p.value === row.original.priority);
+      return priority ? priority.label : row.original.priority;
+    },
     meta: {
       style: { width: "150px" },
     },

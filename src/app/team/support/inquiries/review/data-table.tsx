@@ -1,4 +1,4 @@
-// src/app/sales/orderreview/data-table.tsx
+// src/app/team/support/inquiries/review/data-table.tsx
 
 import * as React from "react";
 import { flexRender, Table as TableType } from "@tanstack/react-table";
@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -28,12 +27,12 @@ interface DataTableProps<TData> {
 export function DataTable<TData>({ table }: DataTableProps<TData>) {
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex flex-row items-center justify-between mx-2 my-2">
+      {/* <div className="flex flex-row items-center justify-between mx-2 my-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            {/* <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button> */}
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {table
@@ -55,8 +54,8 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      <div className="flex-1 overflow-hidden rounded-md border w-full sm:w-full md:w-full lg:min-w-[1850px] lg:max-w-[3068px]">
+      </div> */}
+      <div className="flex-1 overflow-hidden rounded-md border w-full">
         <div className="h-[calc(100vh-200px)] overflow-auto">
           <Table>
             <TableHeader>

@@ -8,7 +8,7 @@ import LeftEarly from './../../../emails/LeftEarly';
 import CustomStatus from './../../../emails/CustomStatus';
 import GunsmithInspection from '../../../emails/GunsmithInspection';
 import OrderCustomerContacted from '../../../emails/OrderCustomerContacted';
-import OrderSetStatus from '../../../emails/OrderSetStatus';
+import SupportRequestStatusUpdate from '../../../emails/SupportRequestStatusUpdate';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -77,16 +77,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
           fromEmail = `AHR <orders@${process.env.RESEND_DOMAIN}>`;
           break;
-        case 'OrderSetStatus':
-          emailTemplate = OrderSetStatus({
-            id: templateData.id,
-            customerName: templateData.customerName,
-            newStatus: templateData.newStatus,
-            updatedBy: templateData.updatedBy,
-            item: templateData.item
-          });
-          fromEmail = `AHR <orders@${process.env.RESEND_DOMAIN}>`;
-          break;
+          case 'SupportRequestStatusUpdate':
+            emailTemplate = SupportRequestStatusUpdate({
+              id: templateData.id,
+              name: templateData.employeeName,
+              newStatus: templateData.newStatus,
+              updatedBy: templateData.updatedBy,
+              category: templateData.category,
+              priority: templateData.priority
+            });
+            fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
+            break;
         default:
           throw new Error('Invalid template name');
       }

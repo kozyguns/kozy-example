@@ -1,4 +1,4 @@
-// src/app/sales/orderreview/data-table.tsx
+// src/app/team/support/inquiries/crew-data-table.tsx
 
 import * as React from "react";
 import { flexRender, Table as TableType } from "@tanstack/react-table";
@@ -10,30 +10,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { DataTablePagination } from "@/app/admin/audits/review/pagination";
 
-interface DataTableProps<TData> {
+interface CrewDataTableProps<TData> {
   table: TableType<TData>;
 }
 
-export function DataTable<TData>({ table }: DataTableProps<TData>) {
+export function CrewDataTable<TData>({ table }: CrewDataTableProps<TData>) {
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex flex-row items-center justify-between mx-2 my-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            {/* <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="ml-auto">
               Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button> */}
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {table
@@ -56,7 +55,7 @@ export function DataTable<TData>({ table }: DataTableProps<TData>) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex-1 overflow-hidden rounded-md border w-full sm:w-full md:w-full lg:min-w-[1850px] lg:max-w-[3068px]">
+      <div className="flex-1 overflow-hidden rounded-md border w-full">
         <div className="h-[calc(100vh-200px)] overflow-auto">
           <Table>
             <TableHeader>
