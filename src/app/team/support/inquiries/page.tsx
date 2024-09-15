@@ -56,7 +56,6 @@ const phoneRegex = /^\d{3}-\d{3}-\d{4}$/;
 const schema = z.object({
   category: z.string().nonempty({ message: "Category selection is required" }),
   inquiry_type: z.string().nonempty({ message: "Inquiry type is required" }),
-  email: z.string().email({ message: "Invalid email address" }),
   phone: z.string().regex(phoneRegex, {
     message: "Phone number must be in xxx-xxx-xxxx format",
   }),
@@ -140,32 +139,93 @@ export default function OrdersComponent() {
     }
   }, [userUuid]);
 
+  const sendEmail = async (templateName: string, templateData: any) => {
+    try {
+      const response = await fetch("/api/send_email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: templateData.recipientEmail,
+          subject: templateData.subject,
+          templateName: templateName,
+          templateData: templateData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send email");
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      throw error;
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
-    if (!userUuid) {
-      toast.error("User is not authenticated.");
+    if (!userUuid || !userEmail) {
+      toast.error("User information is not available. Please log in again.");
       return;
     }
   
     const submissionData = {
       user_uuid: userUuid,
-      name: userName,
-      employee_email: userEmail,
+      name: userName || "Anonymous",
+      employee_email: userEmail, // Use the employee's email
       category: data.category,
       inquiry_type: data.inquiry_type,
       phone: data.phone,
-      email: data.email,
-      details: data.details
+      details: data.details,
+      status: "pending" // Set initial status
     };
   
-    const { error } = await supabase.from("support_requests").insert(submissionData);
-    if (error) {
-      console.error("Error submitting support request:", error);
-      toast.error("There was an error submitting your request.");
-    } else {
+    try {
+      const { data: newRequest, error } = await supabase
+        .from("support_requests")
+        .insert(submissionData)
+        .select()
+        .single();
+  
+      if (error) throw error;
+  
+      // Send confirmation email to the employee
+      await sendEmail("SupportRequestConfirmation", {
+        recipientEmail: userEmail, // Send to the employee's email
+        subject: "Support Request Confirmation",
+        name: userName || "Anonymous",
+        category: data.category,
+        inquiryType: data.inquiry_type,
+        requestId: newRequest.id,
+        details: newRequest.details,
+      });
+  
+      // Send notification to super admins
+      const { data: superAdmins } = await supabase
+        .from("employees")
+        .select("contact_info")
+        .eq("role", "super admin");
+  
+      if (superAdmins) {
+        for (const admin of superAdmins) {
+          await sendEmail("NewSupportRequestNotification", {
+            recipientEmail: admin.contact_info,
+            subject: "New Support Request Submitted",
+            requestId: newRequest.id,
+            clientName: userName || "Anonymous",
+            category: data.category,
+            inquiryType: data.inquiry_type,
+            details: newRequest.details,
+          });
+        }
+      }
+  
       toast.success("Your support request has been submitted.");
       reset();
       setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error submitting support request:", error);
+      toast.error("There was an error submitting your request.");
     }
   };
 
@@ -194,13 +254,13 @@ export default function OrdersComponent() {
       .eq("field_name", "app")
       .order("display_order");
 
-      const { data: followup } = await supabase
-    .from("support_references")
-    .select("option_value")
-    .eq("field_name", "followup")
-    .order("display_order");
+    const { data: followup } = await supabase
+      .from("support_references")
+      .select("option_value")
+      .eq("field_name", "followup")
+      .order("display_order");
 
-  console.log("Fetched followup data:", followup); // Add this line
+    console.log("Fetched followup data:", followup); // Add this line
 
     setReferenceData({
       category: category?.map((c) => c.option_value) || [],
@@ -236,8 +296,8 @@ export default function OrdersComponent() {
       case "Following Up":
         setSubCategoryOptions(referenceData.followup);
         break;
-        default:
-          setSubCategoryOptions([]);
+      default:
+        setSubCategoryOptions([]);
     }
   };
 
@@ -355,9 +415,7 @@ export default function OrdersComponent() {
                   <p className="text-red-500">{errors.inquiry_type.message}</p>
                 )}
               </div> */}
-              
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
@@ -369,7 +427,9 @@ export default function OrdersComponent() {
                   <p className="text-red-500">{errors.phone.message}</p>
                 )}
               </div>
-              <div className="space-y-2">
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -380,7 +440,7 @@ export default function OrdersComponent() {
                 {errors.email && (
                   <p className="text-red-500">{errors.email.message}</p>
                 )}
-              </div>
+              </div> */}
             </div>
             {/* <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -432,13 +492,11 @@ export default function OrdersComponent() {
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              Please Note:
-            </AlertDialogTitle>
+            <AlertDialogTitle>Please Note:</AlertDialogTitle>
             <AlertDialogDescription>
-              We are a very small team and may not be able to take on every inquiry as fast as we would like.
-              We will do our best to get back to you within 24 hours, but please
-              be patient with us.
+              We are a very small team and may not be able to take on every
+              inquiry as fast as we would like. We will do our best to get back
+              to you within 24 hours, but please be patient with us.
               <Separator className="my-4 mb-4" />
               Thank you for your understanding and have a great day!
             </AlertDialogDescription>

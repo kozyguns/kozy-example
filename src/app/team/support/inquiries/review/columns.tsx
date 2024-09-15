@@ -13,7 +13,6 @@ export type SupportRequest = {
   category: string;
   inquiry_type: string;
   phone: string;
-  email: string;
   details: string;
   created_at: string;
   updated_at: string;
@@ -66,13 +65,11 @@ export const createColumns = (
     },
   },
   {
-    accessorKey: "email",
+    accessorKey: "employee_email",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Email" />
+      <DataTableColumnHeader column={column} title="Employee Email" />
     ),
-    meta: {
-      style: { width: "200px" },
-    },
+    cell: ({ row }) => <div>{row.getValue("employee_email")}</div>,
   },
   {
     accessorKey: "phone",

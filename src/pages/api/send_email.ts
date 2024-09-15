@@ -9,6 +9,8 @@ import CustomStatus from './../../../emails/CustomStatus';
 import GunsmithInspection from '../../../emails/GunsmithInspection';
 import OrderCustomerContacted from '../../../emails/OrderCustomerContacted';
 import SupportRequestStatusUpdate from '../../../emails/SupportRequestStatusUpdate';
+import SupportRequestConfirmation from '../../../emails/SupportRequestConfirmation';
+import NewSupportRequestNotification from '../../../emails/NewSupportRequestNotification';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -51,43 +53,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
           break;
         case 'CustomStatus':
-          emailTemplate = CustomStatus({
-            name: templateData.name,
-            date: templateData.date,
-            status: templateData.status || templateData.customMessage
-          });
+          emailTemplate = CustomStatus(templateData);
           fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
           break;
         case 'GunsmithInspection':
-          emailTemplate = GunsmithInspection({
-            firearmId: templateData.firearmId,
-            firearmName: templateData.firearmName,
-            requestedBy: templateData.requestedBy,
-            notes: templateData.notes
-          });
+          emailTemplate = GunsmithInspection(templateData);
           fromEmail = `AHR <request@${process.env.RESEND_DOMAIN}>`;
           break;
         case 'OrderCustomerContacted':
-          emailTemplate = OrderCustomerContacted({
-            id: templateData.id,
-            customerName: templateData.customerName,
-            contactedBy: templateData.contactedBy,
-            item: templateData.item,
-            details: templateData.details
-          });
+          emailTemplate = OrderCustomerContacted(templateData);
           fromEmail = `AHR <orders@${process.env.RESEND_DOMAIN}>`;
           break;
-          case 'SupportRequestStatusUpdate':
-            emailTemplate = SupportRequestStatusUpdate({
-              id: templateData.id,
-              name: templateData.employeeName,
-              newStatus: templateData.newStatus,
-              updatedBy: templateData.updatedBy,
-              category: templateData.category,
-              priority: templateData.priority
-            });
-            fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
-            break;
+        case 'SupportRequestStatusUpdate':
+          emailTemplate = SupportRequestStatusUpdate(templateData);
+          fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
+          break;
+        case 'SupportRequestConfirmation':
+          emailTemplate = SupportRequestConfirmation(templateData);
+          fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
+          break;
+        case 'NewSupportRequestNotification':
+          emailTemplate = NewSupportRequestNotification(templateData);
+          fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
+          break;
         default:
           throw new Error('Invalid template name');
       }
@@ -106,7 +94,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.status(200).json({ message: 'Email sent successfully', data: resendRes });
     } catch (error: any) {
       console.error('Error sending email:', error);
-      res.status(500).json({ error: 'Internal Server Error', details: error.message });
+      if (error.message === 'Invalid template name') {
+        res.status(400).json({ error: 'Bad Request', details: error.message });
+      } else {
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+      }
     }
   } else {
     res.setHeader('Allow', ['POST']);

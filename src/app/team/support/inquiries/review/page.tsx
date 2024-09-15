@@ -23,7 +23,12 @@ const title = "Review Support Inquiries";
 export default function SupportInquiriesReviewPage() {
   const [data, setData] = useState<SupportRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string[]>(["pending", "in_progress", "resolved", "closed"]); // Default filter
+  const [statusFilter, setStatusFilter] = useState<string[]>([
+    "pending",
+    "in_progress",
+    "resolved",
+    "closed",
+  ]); // Default filter
   const { user } = useRole();
 
   const fetchSupportRequestData = useCallback(async () => {
@@ -84,7 +89,7 @@ export default function SupportInquiriesReviewPage() {
   };
 
   const setStatus = async (requestId: string, status: string) => {
-    console.log('Attempting to update status:', requestId, status);
+    console.log("Attempting to update status:", requestId, status);
     const request = data.find((r) => r.id === requestId);
     if (request) {
       try {
@@ -92,47 +97,47 @@ export default function SupportInquiriesReviewPage() {
           .from("support_requests")
           .update({ status })
           .eq("id", requestId);
-  
+
         if (error) throw error;
-  
-        console.log('Status updated successfully in database');
-  
+
+        console.log("Status updated successfully in database");
+
         setData((currentData) =>
-          currentData.map((r) =>
-            r.id === requestId ? { ...r, status } : r
-          )
+          currentData.map((r) => (r.id === requestId ? { ...r, status } : r))
         );
 
         // Reset table state
-  table.resetRowSelection();
-  table.resetColumnFilters();
-  table.resetGlobalFilter();
-  
-        console.log('Local data updated');
-  
+        table.resetRowSelection();
+        table.resetColumnFilters();
+        table.resetGlobalFilter();
+
+        console.log("Local data updated");
+
         const statusLabel =
           statuses.find((s) => s.value === status)?.label || status;
-  
+
         // Send email to the employee
         await sendEmail("SupportRequestStatusUpdate", {
           recipientEmail: request.employee_email,
           subject: `Support Request Status Updated`,
           id: request.id,
-          employeeName: request.name,
+          name: request.name,
           newStatus: statusLabel,
           category: request.category,
           inquiryType: request.inquiry_type,
         });
-  
-        console.log('Email sent');
-  
-        toast.success("Support request status updated and email sent to employee.");
+
+        console.log("Email sent");
+
+        toast.success(
+          "Support request status updated and email sent to employee."
+        );
       } catch (error) {
         console.error("Error updating status:", error);
         toast.error("Failed to update status and send email notification.");
       }
     } else {
-      console.error('Request not found:', requestId);
+      console.error("Request not found:", requestId);
     }
   };
 
@@ -158,11 +163,16 @@ export default function SupportInquiriesReviewPage() {
         { event: "*", schema: "public", table: "support_requests" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setData((currentData) => [payload.new as SupportRequest, ...currentData]);
+            setData((currentData) => [
+              payload.new as SupportRequest,
+              ...currentData,
+            ]);
           } else if (payload.eventType === "UPDATE") {
             setData((currentData) =>
               currentData.map((request) =>
-                request.id === payload.new.id ? (payload.new as SupportRequest) : request
+                request.id === payload.new.id
+                  ? (payload.new as SupportRequest)
+                  : request
               )
             );
           } else if (payload.eventType === "DELETE") {
@@ -207,12 +217,12 @@ export default function SupportInquiriesReviewPage() {
             <div className="rounded-md border flex-1 flex flex-col">
               <div className="relative w-full h-full overflow-auto flex-1">
                 <div className="flex p-2">
-              <SupportRequestTableToolbar table={table} />
-              </div>
-              <div className="flex-1 flex flex-col">
-                <Suspense fallback={<p>Loading...</p>}>
-                <DataTable table={table} />
-                </Suspense>
+                  <SupportRequestTableToolbar table={table} />
+                </div>
+                <div className="flex-1 flex flex-col">
+                  <Suspense fallback={<p>Loading...</p>}>
+                    <DataTable table={table} />
+                  </Suspense>
                 </div>
               </div>
             </div>
