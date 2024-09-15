@@ -1,6 +1,6 @@
-export const cycleFirearms = (firearms: any[], count: number) => {
+export const cycleFirearms = (firearms: any[], count: number, startIndex: number = 0) => {
   const cycledFirearms = [];
-  let index = 0;
+  let index = startIndex;
 
   while (cycledFirearms.length < count) {
     cycledFirearms.push(firearms[index]);

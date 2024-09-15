@@ -52,11 +52,14 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
   userUuid,
   onStatusChange,
   onNotesChange,
-  onUpdateFrequency, // Add this line
-  onDeleteFirearm, // Add this line
+  onUpdateFrequency,
+  onDeleteFirearm,
   pageIndex,
   setPageIndex,
 }: DataTableProps<TData, TValue>) {
+  if (!data || data.length === 0) {
+    return <div>No data available</div>;
+  }
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -163,51 +166,61 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const metaStyle = (
-                        cell.column.columnDef.meta as {
-                          style?: React.CSSProperties;
-                        }
-                      )?.style;
-                      return (
-                        <TableCell key={cell.id} style={metaStyle}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell>
-                      <DataTableRowActions
-                        row={row}
-                        userRole={userRole}
-                        userUuid={userUuid}
-                        onStatusChange={onStatusChange}
-                        onNotesChange={onNotesChange}
-                        onUpdateFrequency={onUpdateFrequency} // Pass this prop
-                        onDeleteFirearm={onDeleteFirearm} // Pass this prop
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
+  {table.getRowModel().rows?.length ? (
+    table.getRowModel().rows.map((row) => {
+      console.log("Row data:", row.original);
+      return (
+        <TableRow
+          key={row.id}
+          data-state={row.getIsSelected() && "selected"}
+        >
+          {row.getVisibleCells().map((cell) => {
+            console.log(`Cell ${cell.column.id} info:`, {
+              column: cell.column.id,
+              value: cell.getValue(),
+              renderValue: cell.renderValue(),
+            });
+            const metaStyle = (
+              cell.column.columnDef.meta as {
+                style?: React.CSSProperties;
+              }
+            )?.style;
+            return (
+              <TableCell key={cell.id} style={metaStyle}>
+                {flexRender(
+                  cell.column.columnDef.cell,
+                  cell.getContext()
+                )}
+              </TableCell>
+            );
+          })}
+          <TableCell>
+            {row && row.original && (
+              <DataTableRowActions
+                row={row}
+                userRole={userRole}
+                userUuid={userUuid}
+                onStatusChange={onStatusChange}
+                onNotesChange={onNotesChange}
+                onUpdateFrequency={onUpdateFrequency}
+                onDeleteFirearm={onDeleteFirearm}
+              />
+            )}
+          </TableCell>
+        </TableRow>
+      );
+    })
+  ) : (
+    <TableRow>
+      <TableCell
+        colSpan={columns.length}
+        className="h-24 text-center"
+      >
+        No results.
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
           </Table>
         </div>
       </div>

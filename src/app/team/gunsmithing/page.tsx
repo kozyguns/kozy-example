@@ -76,47 +76,47 @@ export default function GunsmithingMaintenance() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUserRoleAndUuid();
-  }, [fetchUserRoleAndUuid]);
-
-  const fetchFirearmsMaintenanceData = useCallback(async (role: string) => {
+  const fetchFirearmsMaintenanceData = useCallback(async (role: string, forNewList: boolean = false) => {
     const { data, error } = await supabase
       .from("firearms_maintenance")
-      .select("*");
-
+      .select("*")
+      .order("last_maintenance_date", { ascending: true });
+  
     if (error) {
       console.error("Error fetching initial data:", error.message);
       throw new Error(error.message);
     }
-
-    // Clear the status field for each firearm
-    const updatedData = data.map((item: FirearmsMaintenanceData) => ({
-      ...item,
-      status: "", // Clear the status
-    }));
-
-    if (role === "gunsmith") {
-      // Separate handguns and long guns
-      const handguns = updatedData.filter(
-        (item: FirearmsMaintenanceData) => item.firearm_type === "handgun"
-      );
-      const longGuns = updatedData.filter(
-        (item: FirearmsMaintenanceData) => item.firearm_type === "long gun"
-      );
-
-      // Cycle through the lists to get 13 of each
-      const cycledHandguns = cycleFirearms(handguns, 13);
-      const cycledLongGuns = cycleFirearms(longGuns, 13);
-
+  
+    if (forNewList || role === "gunsmith") {
+      const handguns = data.filter((item: FirearmsMaintenanceData) => item.firearm_type === "handgun");
+      const longGuns = data.filter((item: FirearmsMaintenanceData) => item.firearm_type === "long gun");
+  
+      // Sort firearms by maintenance_frequency and last_maintenance_date
+      const sortFirearms = (firearms: FirearmsMaintenanceData[]) => {
+        return firearms.sort((a, b) => {
+          const aDueDate = new Date(a.last_maintenance_date);
+          aDueDate.setDate(aDueDate.getDate() + a.maintenance_frequency);
+          const bDueDate = new Date(b.last_maintenance_date);
+          bDueDate.setDate(bDueDate.getDate() + b.maintenance_frequency);
+          return aDueDate.getTime() - bDueDate.getTime();
+        });
+      };
+  
+      const sortedHandguns = sortFirearms(handguns);
+      const sortedLongGuns = sortFirearms(longGuns);
+  
+      const cycledHandguns = cycleFirearms(sortedHandguns, 13);
+      const cycledLongGuns = cycleFirearms(sortedLongGuns, 13);
+  
       return [...cycledHandguns, ...cycledLongGuns];
     }
-
-    // For admin and super admin, return full data
-    return updatedData;
+  
+    return data;
   }, []);
 
-  const fetchPersistedData = useCallback(async (userUuid: string) => {
+  const fetchPersistedData = useCallback(async () => {
+    if (!userUuid) return null;
+
     const { data, error } = await supabase
       .from("persisted_firearms_list")
       .select("*")
@@ -125,108 +125,119 @@ export default function GunsmithingMaintenance() {
 
     if (error && error.code !== "PGRST116") {
       console.error("Error fetching persisted data:", error.message);
-      throw new Error(error.message);
+      return null;
     }
 
-    return data;
-  }, []);
+    return data?.firearms_list || null;
+  }, [userUuid]);
 
-  const persistData = useCallback(
-    async (userUuid: string, firearmsList: FirearmsMaintenanceData[]) => {
-      const { error } = await supabase
-        .from("persisted_firearms_list")
-        .upsert({ user_uuid: userUuid, firearms_list: firearmsList });
+  const persistData = useCallback(async (firearmsList: FirearmsMaintenanceData[]) => {
+    if (!userUuid) {
+      console.error("User UUID is not available");
+      return;
+    }
 
-      if (error) {
-        console.error("Error persisting data:", error.message);
-        throw new Error(error.message);
-      }
-    },
-    []
-  );
+    const { error } = await supabase
+      .from("persisted_firearms_list")
+      .upsert({ 
+        user_uuid: userUuid,
+        firearms_list: firearmsList
+      });
+
+    if (error) {
+      console.error("Error persisting data:", error.message);
+    }
+  }, [userUuid]);
 
   const fetchData = useCallback(async () => {
+    if (!userRole || !userUuid) return;
+
     setLoading(true);
     try {
-      const persistedData = await fetchPersistedData(userUuid || "");
-      if (persistedData) {
-        setData(persistedData.firearms_list);
+      const persistedData: FirearmsMaintenanceData[] = await fetchPersistedData();
+      const fetchedData: FirearmsMaintenanceData[] = await fetchFirearmsMaintenanceData(userRole);
+    
+      let finalData;
+      if (persistedData && persistedData.length > 0) {
+        // Use persisted data, preserving status and notes
+        const persistedMap = new Map(persistedData.map(item => [item.id, item]));
+        finalData = fetchedData.map(item => {
+          const persistedItem = persistedMap.get(item.id);
+          return persistedItem ? { ...item, ...persistedItem } : item;
+        });
       } else {
-        const fetchedData = await fetchFirearmsMaintenanceData(userRole || "");
-        setData(fetchedData);
-        await persistData(userUuid || "", fetchedData);
+        // If no persisted data, use fetched data as is
+        finalData = fetchedData;
       }
-      setLoading(false);
+  
+      setData(finalData);
+      await persistData(finalData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      setData([]);
+    } finally {
       setLoading(false);
     }
-  }, [
-    fetchFirearmsMaintenanceData,
-    fetchPersistedData,
-    persistData,
-    userRole,
-    userUuid,
-  ]);
+  }, [fetchFirearmsMaintenanceData, fetchPersistedData, persistData, userRole, userUuid]);
+
+
+  const handleStatusChange = useCallback(async (id: number, status: string | null) => {
+    setData((prevData) => {
+      const updatedData = prevData.map((item) =>
+        item.id === id ? { ...item, status: status || "" } : item
+      );
+      persistData(updatedData);
+      return updatedData;
+    });
+  }, [persistData]);
+
+const handleNotesChange = useCallback(async (id: number, notes: string) => {
+  const currentDate = new Date().toISOString();
+  setData((prevData) => {
+    const updatedData = prevData.map((item) =>
+      item.id === id 
+        ? { 
+            ...item, 
+            maintenance_notes: notes,
+            last_maintenance_date: currentDate 
+          } 
+        : item
+    );
+    persistData(updatedData);
+    return updatedData;
+  });
+
+  // Update the database
+  try {
+    const { error } = await supabase
+      .from("firearms_maintenance")
+      .update({ 
+        maintenance_notes: notes,
+        last_maintenance_date: currentDate
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating notes and date in database:", error);
+      toast.error("Failed to update notes and date in database");
+    }
+  } catch (error) {
+    console.error("Error updating notes and date:", error);
+    toast.error("Failed to update notes and date");
+  }
+}, [persistData]);
+
+  useEffect(() => {
+    fetchUserRoleAndUuid();
+  }, [fetchUserRoleAndUuid]);
 
   useEffect(() => {
     if (userRole && userUuid) {
       fetchData();
     }
   }, [fetchData, userRole, userUuid]);
+  
 
-  const handleStatusChange = async (id: number, status: string | null) => {
-    try {
-      const { error } = await supabase
-        .from("firearms_maintenance")
-        .update({ status })
-        .eq("id", id);
-
-      if (error) {
-        throw error;
-      }
-
-      setData((prevData) =>
-        prevData.map((item) =>
-          item.id === id
-            ? { ...item, status: status !== null ? status : "" }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error("Error updating status:", error);
-    }
-  };
-
-  const handleNotesChange = async (id: number, notes: string) => {
-    try {
-      const { error } = await supabase
-        .from("firearms_maintenance")
-        .update({
-          maintenance_notes: notes,
-          last_maintenance_date: new Date().toISOString(),
-        })
-        .eq("id", id);
-
-      if (error) {
-        throw error;
-      }
-
-      setData((prevData) =>
-        prevData.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                maintenance_notes: notes,
-                last_maintenance_date: new Date().toISOString(),
-              }
-            : item
-        )
-      );
-    } catch (error) {
-      console.error("Error updating maintenance notes:", error);
-    }
-  };
 
   const handleUpdateFrequency = (id: number, frequency: number) => {
     setData((prevData) =>
@@ -250,7 +261,7 @@ export default function GunsmithingMaintenance() {
       if (newFirearmData && newFirearmData.length > 0) {
         setData((prevData) => {
           const updatedData = [...prevData, newFirearmData[0]];
-          persistData(userUuid || "", updatedData);
+          persistData(updatedData);
 
           // Calculate the new page index based on the total number of items
           const newPageIndex = Math.floor(updatedData.length / pageSize);
@@ -303,7 +314,7 @@ export default function GunsmithingMaintenance() {
 
       const updatedData = data.filter((item) => item.id !== id);
       setData(updatedData);
-      await persistData(userUuid || "", updatedData);
+      await persistData(updatedData);
     } catch (error) {
       console.error("Error deleting firearm:", error);
     }
@@ -341,7 +352,7 @@ export default function GunsmithingMaintenance() {
               );
             }
 
-            persistData(userUuid || "", updatedData);
+            persistData(updatedData);
             return updatedData;
           });
         }
@@ -354,19 +365,21 @@ export default function GunsmithingMaintenance() {
   }, [persistData, userUuid]);
 
   const handleSubmit = async () => {
-    // Check if all firearms have notes and status
+    console.log("Starting submission process");
+    console.log("Current data:", data);
+  
     const incompleteFirearms = data.filter(
       (firearm) => !firearm.maintenance_notes || !firearm.status
     );
-
+  
     if (incompleteFirearms.length > 0) {
-      alert(
-        "Please ensure all firearms have detailed notes and a status before submitting."
-      );
+      console.log("Incomplete firearms found:", incompleteFirearms);
+      alert("Please ensure all firearms have detailed notes and a status before submitting.");
       return;
     }
-
+  
     try {
+      console.log("Updating firearms in the database");
       // Update the maintenance notes, status, and last maintenance date in the database
       for (const firearm of data) {
         await supabase
@@ -378,36 +391,47 @@ export default function GunsmithingMaintenance() {
           })
           .eq("id", firearm.id);
       }
-
-      // Clear persisted list after submission
-      await supabase
-        .from("persisted_firearms_list")
-        .delete()
-        .eq("user_uuid", userUuid);
-
-      // Generate the new list
-      const response = await fetch("/api/firearms-maintenance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action: "generateNewList", data: { userUuid } }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate new list");
-      }
-
-      // Show a toast notification
+  
+      console.log("Generating new list");
+      // Generate the new list based on maintenance frequency
+      const newData = await fetchFirearmsMaintenanceData(userRole || "", true);
+      console.log("New data fetched:", newData);
+  
+      const resetData = newData.map((item: FirearmsMaintenanceData) => ({
+        ...item,
+        status: "",
+        maintenance_notes: item.maintenance_notes || "",
+      }));
+      console.log("Reset data:", resetData);
+  
+      // Update the state and persist the new list
+      setData(resetData);
+      await persistData(resetData);
+  
+      console.log("Clearing persisted data");
+      // Clear persisted data after successful submission
+      await clearPersistedData();
+  
+      console.log("Submission process completed successfully");
       toast.success("Maintenance list submitted successfully!");
-
-      // Reload the page to show the new list
-      location.reload();
     } catch (error) {
       console.error("Failed to submit maintenance list:", error);
       toast.error("Failed to submit maintenance list.");
     }
   };
+
+  const clearPersistedData = useCallback(async () => {
+    if (!userUuid) return;
+  
+    const { error } = await supabase
+      .from("persisted_firearms_list")
+      .delete()
+      .eq("user_uuid", userUuid);
+  
+    if (error) {
+      console.error("Error clearing persisted data:", error.message);
+    }
+  }, [userUuid]);
 
   const regenerateFirearmsList = async () => {
     try {
@@ -427,7 +451,7 @@ export default function GunsmithingMaintenance() {
       setData(firearms);
 
       // Persist the new list
-      await persistData(userUuid || "", firearms);
+      await persistData(firearms);
 
       toast.success("Firearms list regenerated successfully!");
     } catch (error) {
@@ -492,17 +516,17 @@ export default function GunsmithingMaintenance() {
                             userRole &&
                             userUuid && (
                               <DataTable
-                                columns={columns}
-                                data={data}
-                                userRole={userRole}
-                                userUuid={userUuid}
-                                onStatusChange={handleStatusChange}
-                                onNotesChange={handleNotesChange}
-                                onUpdateFrequency={handleUpdateFrequency}
-                                onDeleteFirearm={handleDeleteFirearm}
-                                pageIndex={pageIndex}
-                                setPageIndex={setPageIndex}
-                              />
+                              columns={columns}
+                              data={data}
+                              userRole={userRole}
+                              userUuid={userUuid}
+                              onStatusChange={handleStatusChange}
+                              onNotesChange={handleNotesChange}
+                              onUpdateFrequency={handleUpdateFrequency}
+                              onDeleteFirearm={handleDeleteFirearm}
+                              pageIndex={pageIndex}
+                              setPageIndex={setPageIndex}
+                            />
                             )
                           )}
                         </div>

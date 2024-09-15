@@ -46,6 +46,11 @@ export function DataTableRowActions({
   onUpdateFrequency,
   onDeleteFirearm,
 }: DataTableRowActionsProps) {
+    // Add this check at the beginning of the component
+    if (!row || !row.original) {
+      console.error("Row or row.original is undefined in DataTableRowActions");
+      return null; // or return a placeholder UI
+    }
   const task = row.original;
   const [open, setOpen] = useState(false);
   const [maintenanceNotes, setMaintenanceNotes] = useState(

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import AddFirearmForm from "@/app/team/gunsmithing/AddFirearmForm";
 import { ProgressBar } from "@/components/ProgressBar";
 import { toZonedTime, format as formatTZ } from "date-fns-tz";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const words = "Firearms Checklist";
 const timeZone = "America/Los_Angeles";
@@ -73,6 +74,60 @@ export default function FirearmsChecklist() {
   useEffect(() => {
     fetchUserRoleAndUuid();
   }, [fetchUserRoleAndUuid]);
+
+  const getHighlightColor = (notes: string) => {
+    switch (notes) {
+      case "With Gunsmith":
+        return "amber";
+      case "Currently Rented Out":
+        return "red";
+      case "Verified":
+        return "green-600";
+      case "Inspection Requested":
+        return "blue-500";
+      default:
+        return "";
+    }
+  };
+
+  useEffect(() => {
+    let channel: RealtimeChannel;
+
+    const setupRealtimeSubscription = async () => {
+      channel = supabase
+        .channel("firearms-maintenance-changes")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "firearms_maintenance" },
+          (payload) => {
+            const changedFirearm = payload.new as FirearmsMaintenanceData;
+            setData((prevData) =>
+              prevData.map((item) =>
+                item.id === changedFirearm.id
+                  ? {
+                      ...item,
+                      ...changedFirearm,
+                      notes: changedFirearm.rental_notes || "", // Use rental_notes, fallback to empty string if null
+                      highlight: getHighlightColor(
+                        changedFirearm.rental_notes || ""
+                      ),
+                    }
+                  : item
+              )
+            );
+          }
+        )
+        .subscribe();
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
 
   const handleRequestInspection = async (id: number, notes: string) => {
     try {
@@ -552,7 +607,7 @@ export default function FirearmsChecklist() {
     id: number;
     firearm_type: string;
     firearm_name: string;
-    maintenance_frequency: number;
+    maintenance_frequency: number | null;
   }) => {
     try {
       const { error } = await supabase
