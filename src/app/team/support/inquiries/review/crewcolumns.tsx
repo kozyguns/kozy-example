@@ -8,7 +8,7 @@ import { includesArrayString } from "./custom-filter";
 
 export type SupportRequest = {
   id: string;
-  employee_name: string;
+  name: string;
   employee_email: string;
   category: string;
   inquiry_type: string;
@@ -32,7 +32,7 @@ export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
 
 export const createColumns = (): ColumnDef<SupportRequest>[] => [
   {
-    accessorKey: "employee_name",
+    accessorKey: "name",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Submitted By" />
     ),
