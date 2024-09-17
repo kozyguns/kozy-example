@@ -28,7 +28,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { DataTablePagination } from "./pagination";
 import { ColumnDef, FirearmsMaintenanceData, columns } from "./columns";
 import { DataTableRowActions } from "./data-table-row-actions";
 
@@ -41,8 +40,8 @@ interface DataTableProps<TData extends FirearmsMaintenanceData, TValue> {
   onNotesChange: (id: number, notes: string) => void;
   onUpdateFrequency: (id: number, frequency: number) => void;
   onDeleteFirearm: (id: number) => void;
-  pageIndex: number; // New prop
-  setPageIndex: (pageIndex: number) => void; // New prop
+  pageIndex: number;
+  setPageIndex: (index: number) => void;
 }
 
 export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
@@ -58,8 +57,11 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
   setPageIndex,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const table = useReactTable({
@@ -80,19 +82,18 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-
+    manualPagination: true,
+    manualSorting: true,
   });
-
-  React.useEffect(() => {
-    table.setPageIndex(pageIndex);
-  }, [pageIndex, table]);
 
   return (
     <div className="flex flex-col h-full w-full max-h-[80vh]">
       <div className="flex flex-row items-center justify-between mx-2 my-2">
         <Input
           placeholder="Filter By Firearm Name..."
-          value={table.getColumn("firearm_name")?.getFilterValue() as string}
+          value={
+            (table.getColumn("firearm_name")?.getFilterValue() as string) ?? ""
+          }
           onChange={(event) =>
             table.getColumn("firearm_name")?.setFilterValue(event.target.value)
           }
@@ -100,7 +101,7 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
         />
         <Input
           placeholder="Filter By Status..."
-          value={table.getColumn("status")?.getFilterValue() as string}
+          value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("status")?.setFilterValue(event.target.value)
           }
@@ -140,13 +141,8 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
-                    const metaStyle = (
-                      header.column.columnDef.meta as {
-                        style?: React.CSSProperties;
-                      }
-                    )?.style;
                     return (
-                      <TableHead key={header.id} style={metaStyle}>
+                      <TableHead key={header.id}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(
@@ -160,67 +156,47 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
-  {table.getRowModel().rows?.length ? (
-    table.getRowModel().rows.map((row) => {
-      console.log("Row data:", row.original);
-      return (
-        <TableRow
-          key={row.id}
-          data-state={row.getIsSelected() && "selected"}
-        >
-          {row.getVisibleCells().map((cell) => {
-            console.log(`Cell ${cell.column.id} info:`, {
-              column: cell.column.id,
-              value: cell.getValue(),
-              renderValue: cell.renderValue(),
-            });
-            const metaStyle = (
-              cell.column.columnDef.meta as {
-                style?: React.CSSProperties;
-              }
-            )?.style;
-            return (
-              <TableCell key={cell.id} style={metaStyle}>
-                {flexRender(
-                  cell.column.columnDef.cell,
-                  cell.getContext()
-                )}
-              </TableCell>
-            );
-          })}
-          <TableCell>
-            {row && row.original && (
-              <DataTableRowActions
-                row={row}
-                userRole={userRole}
-                userUuid={userUuid}
-                onStatusChange={onStatusChange}
-                onNotesChange={onNotesChange}
-                onUpdateFrequency={onUpdateFrequency}
-                onDeleteFirearm={onDeleteFirearm}
-              />
-            )}
-          </TableCell>
-        </TableRow>
-      );
-    })
-  ) : (
-    <TableRow>
-      <TableCell
-        colSpan={columns.length}
-        className="h-24 text-center"
-      >
-        No results.
-      </TableCell>
-    </TableRow>
-  )}
-</TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                    <TableCell>
+                      <DataTableRowActions
+                        row={row}
+                        userRole={userRole}
+                        userUuid={userUuid}
+                        onStatusChange={onStatusChange}
+                        onNotesChange={onNotesChange}
+                        onUpdateFrequency={onUpdateFrequency}
+                        onDeleteFirearm={onDeleteFirearm}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
           </Table>
         </div>
       </div>
-      {/* <div className="flex-none mt-4">
-        <DataTablePagination table={table} setPageIndex={setPageIndex} />
-      </div> */}
     </div>
   );
 }

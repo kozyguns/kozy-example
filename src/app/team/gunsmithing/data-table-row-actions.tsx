@@ -1,5 +1,4 @@
-"use client";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Row } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/utils/supabase/client";
-import { FirearmsMaintenanceData } from "./columns";
-import { maintenanceFrequencies } from "./columns"; // Import frequency options
+import { FirearmsMaintenanceData, maintenanceFrequencies } from "./columns";
 import {
   Dialog,
   DialogClose,
@@ -47,68 +44,32 @@ export function DataTableRowActions({
   onDeleteFirearm,
 }: DataTableRowActionsProps) {
   const [open, setOpen] = useState(false);
-  const [maintenanceNotes, setMaintenanceNotes] = useState("");
+  const [localNotes, setLocalNotes] = useState("");
 
   useEffect(() => {
     if (row && row.original) {
-      setMaintenanceNotes(row.original.maintenance_notes || "");
+      setLocalNotes(row.original.maintenance_notes || "");
     }
   }, [row]);
 
   if (!row || !row.original) {
     console.error("Row or row.original is undefined in DataTableRowActions");
-    return null; // or return a placeholder UI
+    return null;
   }
 
   const task = row.original;
 
-  const handleStatusChange = async (status: string | null) => {
-    const { error } = await supabase
-      .from("firearms_maintenance")
-      .update({ status })
-      .eq("id", task.id);
-
-    if (error) {
-      console.error("Error updating status:", error.message);
-    } else {
-      onStatusChange(task.id, status);
-    }
+  const handleStatusChange = (status: string | null) => {
+    onStatusChange(task.id, status);
   };
 
-  const newStatusOptions = [
-    "Repaired",
-    "Under Repair",
-    "Had To Send Out",
-    "Waiting For Parts",
-    "Prepping For Sale",
-    null, // Clear status
-  ];
-
-  const handleSaveNotes = async () => {
-    const { error } = await supabase
-      .from("firearms_maintenance")
-      .update({ maintenance_notes: maintenanceNotes })
-      .eq("id", task.id);
-
-    if (error) {
-      console.error("Error saving maintenance notes:", error.message);
-    } else {
-      onNotesChange(task.id, maintenanceNotes);
-      setOpen(false);
-    }
+  const handleSaveNotes = () => {
+    onNotesChange(task.id, localNotes);
+    setOpen(false);
   };
 
-  const handleFrequencyChange = async (frequency: number) => {
-    const { error } = await supabase
-      .from("firearms_maintenance")
-      .update({ maintenance_frequency: frequency })
-      .eq("id", task.id);
-
-    if (error) {
-      console.error("Error updating frequency:", error.message);
-    } else {
-      onUpdateFrequency(task.id, frequency);
-    }
+  const handleFrequencyChange = (frequency: number) => {
+    onUpdateFrequency(task.id, frequency);
   };
 
   const canEditNotes = ["gunsmith", "admin", "super admin"].includes(userRole);
@@ -203,8 +164,8 @@ export function DataTableRowActions({
           </DialogHeader>
           <Textarea
             placeholder="Enter maintenance notes..."
-            value={maintenanceNotes}
-            onChange={(e) => setMaintenanceNotes(e.target.value)}
+            value={localNotes}
+            onChange={(e) => setLocalNotes(e.target.value)}
           />
           <DialogFooter>
             <Button onClick={handleSaveNotes}>Save</Button>

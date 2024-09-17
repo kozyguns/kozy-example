@@ -1,5 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { parseISO } from "date-fns";
+import { format } from "date-fns-tz";
 
 export interface FirearmsMaintenanceData {
   id: number;
@@ -23,14 +24,12 @@ export const columns: ColumnDef<FirearmsMaintenanceData>[] = [
   },
   {
     accessorKey: "last_maintenance_date",
-    header: "Last Maintenance Date",
+    header: "Last Maintenance",
     cell: ({ row }) => {
-      const date = row.getValue("last_maintenance_date");
-      if (date) {
-        // Format the date as "MMM dd, yyyy" (e.g., "Sep 15, 2024")
-        return format(new Date(date as string), "MMM dd, yyyy");
-      }
-      return "N/A";
+      const dateString = row.getValue("last_maintenance_date");
+      if (!dateString) return null;
+      const date = parseISO(dateString as string);
+      return format(date, "MMM dd, yyyy");
     },
   },
   {
@@ -48,7 +47,7 @@ export const columns: ColumnDef<FirearmsMaintenanceData>[] = [
       const status = row.getValue("status");
       return status ? status : "No status";
     },
-  }
+  },
 ];
 
 export const maintenanceFrequencies = [
