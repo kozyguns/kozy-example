@@ -71,6 +71,7 @@ import { CustomCalendarMulti } from "@/components/ui/calendar";
 import { Progress } from "@/components/ui/progress";
 import { ProgressBar } from "@/components/ProgressBar";
 import { Separator } from "@radix-ui/react-dropdown-menu";
+import SuggestionForm from "@/components/SuggestionForm";
 
 const schedulestitle = "Scheduling";
 const performancetitle = "Individual Performance";
@@ -723,7 +724,7 @@ const EmployeeProfilePage = () => {
     // Fetch from employees table
     const { data: employee, error: employeeError } = await supabase
       .from("employees")
-      .select("*")
+      .select("*, contact_info")
       .eq("employee_id", employeeId)
       .single();
 
@@ -1628,6 +1629,35 @@ const EmployeeProfilePage = () => {
                               align="start"
                             >
                               <PointsForm /> {/* Render the PointsComponent */}
+                            </PopoverContent>
+                          </Popover>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="mt-4">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                          <CardTitle className="text-2xl font-bold">
+                            Submit A Suggestion
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full text-left font-normal"
+                              >
+                                Submit Suggestion Form
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-2"
+                              align="start"
+                            >
+                              <SuggestionForm
+                                employeeName={employee?.name || ''}
+                                employeeContactInfo={employee?.contact_info || ''}
+                              />
                             </PopoverContent>
                           </Popover>
                         </CardContent>

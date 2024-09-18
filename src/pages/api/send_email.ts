@@ -11,6 +11,7 @@ import OrderCustomerContacted from '../../../emails/OrderCustomerContacted';
 import SupportRequestStatusUpdate from '../../../emails/SupportRequestStatusUpdate';
 import SupportRequestConfirmation from '../../../emails/SupportRequestConfirmation';
 import NewSupportRequestNotification from '../../../emails/NewSupportRequestNotification';
+import SuggestionReply from '../../../emails/SuggestionReply';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -75,6 +76,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         case 'NewSupportRequestNotification':
           emailTemplate = NewSupportRequestNotification(templateData);
           fromEmail = `AHR Support <support@${process.env.RESEND_DOMAIN}>`;
+          break;
+        case "SuggestionReply":
+          emailTemplate = SuggestionReply({
+            employeeName: templateData.employeeName,
+            originalSuggestion: templateData.originalSuggestion,
+            replyText: templateData.replyText,
+            repliedBy: templateData.repliedBy,
+          });
+          fromEmail = `AHR Suggestions <suggestions@${process.env.RESEND_DOMAIN}>`;
           break;
         default:
           throw new Error('Invalid template name');
