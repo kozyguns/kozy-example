@@ -15,6 +15,7 @@ import {
   SunIcon,
   MoonIcon,
   PersonIcon,
+  DashboardIcon,
 } from "@radix-ui/react-icons";
 import {
   NavigationMenu,
@@ -462,6 +463,16 @@ const HeaderAdmin = React.memo(() => {
     }
   };
 
+  const handleLinkClick = (href: string) => {
+    router.push(href);
+  };
+
+  const handleProfileClick = () => {
+    if (employeeId) {
+      router.push(`/team/crew/profile/${employeeId}`);
+    }
+  };
+
   return (
     <RoleBasedWrapper allowedRoles={["admin"]}>
       <header className="flex justify-between items-center p-2">
@@ -592,17 +603,17 @@ const HeaderAdmin = React.memo(() => {
                 <DropdownMenuContent className="w-56 mr-2">
                   <DropdownMenuLabel>Profile & Settings</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {/* <DropdownMenuItem>
-                    <Link
-                      href="/team/employees/profiles"
-                      className="flex items-center w-full"
-                    >
-                      <PersonIcon className="mr-2 h-4 w-4" />
-                      <span>Manage Your Profile</span>
-                    </Link>
+                  <DropdownMenuItem onSelect={handleProfileClick}>
+                    <PersonIcon className="mr-2 h-4 w-4" />
+                    <span>Your Profile Page</span>
                   </DropdownMenuItem>
-
-                  <DropdownMenuSeparator /> */}
+                  <DropdownMenuItem
+                    onSelect={() => handleLinkClick("/admin/reports/dashboard")}
+                  >
+                    <DashboardIcon className="mr-2 h-4 w-4" />
+                    <span>Admin Dashboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleChatClick}>
                     <ChatBubbleIcon className="mr-2 h-4 w-4" />
                     <span>Messages</span>

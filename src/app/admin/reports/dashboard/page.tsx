@@ -15,15 +15,6 @@ import { ResponsiveContainer } from "recharts";
 import { parseISO } from "date-fns";
 import { format as formatTZ, toZonedTime } from "date-fns-tz";
 import ChatClient from "../../../team/crew/chat/page";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Popover,
   PopoverContent,
@@ -47,6 +38,14 @@ import { format, formatDate, formatDistanceToNow } from "date-fns";
 import SalesRangeStackedBarChart from "@/app/admin/reports/charts/SalesRangeStackedBarChart";
 import SalesDataTable from "../sales/sales-data-table";
 import { ScrollBar, ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import classNames from "classnames";
 import { Input } from "@/components/ui/input";
 import Papa, { ParseResult } from "papaparse";
@@ -54,6 +53,8 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { useRole } from "@/context/RoleContext";
+import { Textarea } from "@/components/ui/textarea";
+import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 
 interface Certificate {
   id: number;
@@ -98,6 +99,7 @@ interface Suggestion {
   created_at: string;
   is_read: boolean;
   replied_by: string | null;
+  replierName: string | null;
   replied_at: string | null;
   reply: string | null; // Add this line
   email: string;
@@ -236,12 +238,34 @@ export default function AdminDashboard() {
       .subscribe();
 
     // Initial data fetch
-    fetchLatestDailyDeposit();
-    fetchLatestGunsmithMaintenance();
-    fetchLatestChecklistSubmission();
-    fetchLatestRangeWalkReport();
-    fetchCertificates();
-    fetchLatestSalesData(selectedRange.start, selectedRange.end);
+    const fetchInitialData = async () => {
+      fetchLatestDailyDeposit();
+      fetchLatestGunsmithMaintenance();
+      fetchLatestChecklistSubmission();
+      fetchLatestRangeWalkReport();
+      fetchCertificates();
+
+      const result = await fetchLatestSalesData(
+        selectedRange.start,
+        selectedRange.end
+      );
+      if (result) {
+        const { totalGross, totalNet, totalNetMinusExclusions, salesData } =
+          result;
+        setTotalGross(totalGross);
+        setTotalNet(totalNet);
+        setTotalNetMinusExclusions(totalNetMinusExclusions);
+        setSalesData(salesData);
+
+        // console.log("Initial data fetch:", {
+        //   totalGross,
+        //   totalNet,
+        //   totalNetMinusExclusions,
+        // });
+      }
+    };
+
+    fetchInitialData();
 
     // Cleanup function
     return () => {
@@ -264,20 +288,33 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleRangeChange = (date: Date | undefined) => {
+  const handleRangeChange = async (date: Date | undefined) => {
     if (date) {
-      // Create a new date object set to the start of the selected day in the local timezone
       const newStart = new Date(
         date.getFullYear(),
         date.getMonth(),
         date.getDate()
       );
-      // Set the end date to the end of the same day
       const newEnd = new Date(newStart);
       newEnd.setHours(23, 59, 59, 999);
 
       setSelectedRange({ start: newStart, end: newEnd });
-      fetchLatestSalesData(newStart, newEnd);
+
+      const result = await fetchLatestSalesData(newStart, newEnd);
+      if (result) {
+        const { totalGross, totalNet, totalNetMinusExclusions, salesData } =
+          result;
+        setTotalGross(totalGross);
+        setTotalNet(totalNet);
+        setTotalNetMinusExclusions(totalNetMinusExclusions);
+        setSalesData(salesData);
+
+        // console.log("Updated state:", {
+        //   totalGross,
+        //   totalNet,
+        //   totalNetMinusExclusions,
+        // });
+      }
     }
   };
 
@@ -297,11 +334,60 @@ export default function AdminDashboard() {
     });
 
     if (response.ok) {
-      const data = await response.json();
-      // console.log("Fetched sales data:", data);
-      setSalesData(data);
+      const responseData = await response.json();
+      let salesData;
+
+      if (Array.isArray(responseData)) {
+        salesData = responseData;
+      } else if (responseData && Array.isArray(responseData.data)) {
+        salesData = responseData.data;
+      } else {
+        console.error("Unexpected data format:", responseData);
+        return null;
+      }
+
+      const excludeCategoriesFromChart = [
+        "CA Tax Gun Transfer",
+        "CA Tax Adjust",
+        "CA Excise Tax",
+        "CA Excise Tax Adjustment",
+      ];
+      const excludeCategoriesFromTotalNet = [
+        "Pistol",
+        "Rifle",
+        "Revolver",
+        "Shotgun",
+        "Receiver",
+        ...excludeCategoriesFromChart,
+      ];
+
+      let totalGross = 0;
+      let totalNetMinusExclusions = 0;
+      let totalNet = 0;
+
+      salesData.forEach((item: any) => {
+        const category = item.category_label;
+        const grossValue = item.total_gross ?? 0;
+        const netValue = item.total_net ?? 0;
+
+        totalGross += grossValue;
+        totalNet += netValue;
+
+        if (!excludeCategoriesFromTotalNet.includes(category)) {
+          totalNetMinusExclusions += netValue;
+        }
+      });
+
+      // console.log("Calculated totals:", {
+      //   totalGross,
+      //   totalNet,
+      //   totalNetMinusExclusions,
+      // });
+
+      return { totalGross, totalNet, totalNetMinusExclusions, salesData };
     } else {
       console.error("Error fetching sales data:", response.statusText);
+      return null;
     }
   }
 
@@ -532,9 +618,7 @@ export default function AdminDashboard() {
           console.error("Error checking record count:", error);
           toast.error("Failed to verify data upload.");
         } else {
-          toast.success(
-            `File processed successfully. Current record count: ${count}`
-          );
+          toast.success(`Successfully uploaded ${count} records.`);
         }
 
         setFile(null);
@@ -611,11 +695,30 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Get the current user's information from Supabase
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      console.error("Error getting current user:", userError);
+      toast.error("Failed to get current user information");
+      return;
+    }
+
+    console.log("Current user data:", user); // Log the entire user object
+
+    const fullName = user?.user_metadata?.name || "";
+    const firstName = fullName.split(" ")[0]; // This will get the first word of the name
+    const replierName = firstName || "Admin";
+    // console.log("Replier name:", replierName); // Log the replier name
+
     const { error } = await supabase
       .from("employee_suggestions")
       .update({
         is_read: true,
-        replied_by: "Admin", // You might want to use the actual admin's name here
+        replied_by: replierName, // This is correct
         replied_at: new Date().toISOString(),
         reply: replyText,
       })
@@ -628,14 +731,14 @@ export default function AdminDashboard() {
       // Send email
       try {
         await sendEmail(
-          suggestion.email, // Make sure you have the employee's email in the suggestion data
+          suggestion.email,
           "Reply to Your Suggestion",
           "SuggestionReply",
           {
             employeeName: suggestion.created_by,
             originalSuggestion: suggestion.suggestion,
             replyText: replyText,
-            repliedBy: "Admin", // You might want to use the actual admin's name here
+            repliedBy: "Admin",
           }
         );
 
@@ -646,480 +749,491 @@ export default function AdminDashboard() {
       }
 
       setReplyText("");
-      fetchSuggestions(); // Refresh the suggestions list
+      await fetchSuggestions(); // Refresh the suggestions list
     }
   }
 
   return (
-    <div className="section w-full overflow-hidden">
-      <h1 className="text-3xl font-bold mt-4 mb-4 ml-8">Admin Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mx-auto max-w-[calc(100vw-100px)] overflow-hidden">
-        {/*chat card*/}
-        <div className="w-full overflow-hidden">
+    <RoleBasedWrapper allowedRoles={["admin", "super admin"]}>
+      <div className="section w-full overflow-hidden">
+        <h1 className="text-3xl font-bold ml-8">Admin Dashboard</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mx-auto max-w-[calc(100vw-100px)] overflow-hidden">
+          {/*chat card*/}
           <div className="w-full overflow-hidden">
-            {/* <Card className="flex flex-col mt-2 overflow-hidden">
+            <div className="w-full overflow-hidden">
+              {/* <Card className="flex flex-col mt-2 overflow-hidden">
               <CardContent className="flex-grow overflow-hidden"> */}
-            <div className="h-full overflow-hidden">
-              <ChatClient />
-            </div>
-            {/* </CardContent>
-            </Card> */}
-          </div>
-        </div>
-
-        {/*All Report cards*/}
-        <div className="w-full overflow-hidden">
-          {/* <Card className="flex flex-col max-h-[calc(100vh-250px)] max-w-full mx-auto my-12 overflow-hidden">
-            <CardContent> */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 overflow-hidden">
-            <ReportCard
-              title="Gunsmithing Weekly Maintenance"
-              date={gunsmiths?.last_maintenance_date || null}
-              icon={<PersonIcon className="h-6 w-6" />}
-              extraInfo={gunsmiths?.firearm_name}
-              type="maintenance"
-            />
-            <ReportCard
-              title="Daily Checklist Submissions"
-              date={checklist?.submission_date || null}
-              icon={<ClipboardIcon className="h-6 w-6" />}
-              extraInfo={checklist?.submitted_by_name}
-            />
-
-            <ReportCard
-              title="Daily Range Walk Reports"
-              date={rangeWalk?.date_of_walk || null}
-              icon={<MagnifyingGlassIcon className="h-6 w-6" />}
-              extraInfo={rangeWalk?.user_name}
-            />
-
-            <ReportCard
-              title="Daily Deposits"
-              date={dailyDeposit?.created_at || null}
-              icon={<ClipboardIcon className="h-6 w-6" />}
-              extraInfo={dailyDeposit?.employee_name}
-              type="deposit"
-              details={[
-                {
-                  name: dailyDeposit?.register || "",
-                  value: dailyDeposit?.total_to_deposit?.toFixed(2) || "0.00",
-                },
-              ]}
-            />
-            <ReportCard
-              title="Certificates Needing Renewal"
-              date={
-                certificates.length > 0
-                  ? certificates[certificates.length - 1].expiration
-                  : null
-              }
-              icon={<DrawingPinIcon className="h-6 w-6" />}
-              extraInfo={`${certificates.length} certificate${
-                certificates.length !== 1 ? "s" : ""
-              } need${certificates.length === 1 ? "s" : ""} renewal`}
-              type="certificate"
-              details={certificates}
-            />
-
-            {/* Certificate Renewals List*/}
-            <Card className="flex flex-col overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DrawingPinIcon className="h-6 w-6" />
-                  Certificate Renewals List
-                </CardTitle>
-              </CardHeader>
-              <div className="flex-grow overflow-hidden">
-                {/* <ScrollArea className="h-[calc(100vh-1000px)] overflow-auto"> */}
-                <CardContent className="flex-grow overflow-auto">
-                  {certificates.length > 0 ? (
-                    <ul className="space-y-2 pr-4">
-                      {certificates.map((cert) => (
-                        <li
-                          key={cert.id}
-                          className="flex items-center justify-between space-x-2"
-                        >
-                          <span className="flex-shrink-0 w-1/4 truncate">
-                            {cert.name}
-                          </span>
-                          <span className="flex-shrink-0 w-1/4 truncate">
-                            {cert.certificate}
-                          </span>
-                          <span className="flex-shrink-0 w-1/4 truncate">
-                            {cert.action_status}
-                          </span>
-                          <Badge variant="destructive">
-                            {new Date(cert.expiration).toLocaleDateString()}
-                          </Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-center">
-                      No certificates need renewal at this time.
-                    </p>
-                  )}
-                </CardContent>
-                {/* <ScrollBar orientation="vertical" /> */}
-                {/* <ScrollBar orientation="horizontal" /> */}
-                {/* </ScrollArea> */}
+              <div className="h-full overflow-hidden">
+                <ChatClient />
               </div>
-            </Card>
+              {/* </CardContent>
+            </Card> */}
+            </div>
           </div>
-          {/* </CardContent>
-          </Card> */}
-        </div>
 
-        {/* Super Admin Only*/}
-        <div className="w-full overflow-hidden">
-          {/* <Card className="flex flex-col max-h-[calc(100vh-250px)] max-w-[calc(100vw-150px)] mx-auto my-12 overflow-hidden">
-          <div className="p-8 min-h-screen overflow-hidden">
-            <div className="flex-grow overflow-hidden">
-              <ScrollArea className="h-[calc(100vh-100px)] overflow-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-hidden"> */}
-          {/* <Card className="col-span-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BellIcon className="h-6 w-6" />
-              Important Notices
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Add any important notices or announcements here.</p>
-          </CardContent>
-        </Card> */}
-          {/* <Card className="flex flex-col max-h-full max-w-full mx-auto overflow-hidden">
+          {/*All Report cards*/}
+          <div className="w-full overflow-hidden">
+            {/* <Card className="flex flex-col max-h-[calc(100vh-250px)] max-w-full mx-auto my-12 overflow-hidden">
             <CardContent> */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 my-2 gap-6 overflow-hidden">
-            {/* Manage Approved Domains*/}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 overflow-hidden">
+              <ReportCard
+                title="Gunsmithing Weekly Maintenance"
+                date={gunsmiths?.last_maintenance_date || null}
+                icon={<PersonIcon className="h-6 w-6" />}
+                extraInfo={gunsmiths?.firearm_name}
+                type="maintenance"
+              />
+              <ReportCard
+                title="Daily Checklist Submissions"
+                date={checklist?.submission_date || null}
+                icon={<ClipboardIcon className="h-6 w-6" />}
+                extraInfo={checklist?.submitted_by_name}
+              />
 
-            {/* Select Date and Upload Data */}
-            <Card className="flex flex-col h-full">
-              <CardHeader className="flex-shrink-0">
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-6 w-6" />
-                  Select Date For Chart & Table
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-shrink-0 overflow-hidden">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full pl-3 text-left font-normal mb-2"
-                    >
-                      {format(selectedRange.start, "PPP")}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CustomCalendar
-                      selectedDate={selectedRange.start}
-                      onDateChange={handleRangeChange}
-                      disabledDays={() => false}
-                    />
-                  </PopoverContent>
-                </Popover>
+              <ReportCard
+                title="Daily Range Walk Reports"
+                date={rangeWalk?.date_of_walk || null}
+                icon={<MagnifyingGlassIcon className="h-6 w-6" />}
+                extraInfo={rangeWalk?.user_name}
+              />
 
-                {/* File Upload Section */}
-                {role === "super admin" && (
-                  <div className="mt-4 rounded-md border">
-                    <div className="flex flex-col items-start gap-2 p-2">
-                      <label className="flex items-center gap-2 p-2 rounded-md cursor-pointer border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full">
-                        <Input
-                          type="file"
-                          accept=".csv,.xlsx"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                        <span>{fileName || "Select File"}</span>
-                      </label>
-                      <Button
-                        variant="outline"
-                        onClick={handleSubmit}
-                        className="w-full"
-                        disabled={loading || !file}
-                      >
-                        {loading ? "Uploading..." : "Upload & Process"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {loading && <Progress value={progress} className="mt-4" />}
-              </CardContent>
-            </Card>
+              <ReportCard
+                title="Daily Deposits"
+                date={dailyDeposit?.created_at || null}
+                icon={<ClipboardIcon className="h-6 w-6" />}
+                extraInfo={dailyDeposit?.employee_name}
+                type="deposit"
+                details={[
+                  {
+                    name: dailyDeposit?.register || "",
+                    value: dailyDeposit?.total_to_deposit?.toFixed(2) || "0.00",
+                  },
+                ]}
+              />
+              <ReportCard
+                title="Certificates Needing Renewal"
+                date={
+                  certificates.length > 0
+                    ? certificates[certificates.length - 1].expiration
+                    : null
+                }
+                icon={<DrawingPinIcon className="h-6 w-6" />}
+                extraInfo={`${certificates.length} certificate${
+                  certificates.length !== 1 ? "s" : ""
+                } need${certificates.length === 1 ? "s" : ""} renewal`}
+                type="certificate"
+                details={certificates}
+              />
 
-            {role === "super admin" && !loading && (
+              {/* Certificate Renewals List*/}
               <Card className="flex flex-col overflow-hidden">
                 <CardHeader>
-                  <CardTitle>Manage Approved Domains</CardTitle>
-                  <CardDescription>
-                    Add, edit, or remove domains for internal email addresses.
-                  </CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <DrawingPinIcon className="h-6 w-6" />
+                    Certificate Renewals List
+                  </CardTitle>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
                   {/* <ScrollArea className="h-[calc(100vh-1000px)] overflow-auto"> */}
-                  <CardContent>
-                    <div className="mb-4 flex items-center space-x-2">
-                      <Input
-                        type="text"
-                        value={newDomain}
-                        onChange={(e) => setNewDomain(e.target.value)}
-                        placeholder="Enter new domain"
-                        className="flex-grow"
-                      />
-                      <Button variant="outline" onClick={addDomain}>
-                        Add Domain
-                      </Button>
-                    </div>
-
-                    <ul className="space-y-2 flex flex-col flex-shrink-0">
-                      {domains.map((domain) => (
-                        <li
-                          key={domain.id}
-                          className="flex items-center space-x-2"
-                        >
-                          {editingDomain && editingDomain.id === domain.id ? (
-                            <>
-                              <Input
-                                type="text"
-                                value={editingDomain.domain}
-                                onChange={(e) =>
-                                  setEditingDomain({
-                                    ...editingDomain,
-                                    domain: e.target.value,
-                                  })
-                                }
-                                className="flex-grow"
-                              />
-                              <Button onClick={updateDomain} variant="outline">
-                                Save
-                              </Button>
-                              <Button
-                                onClick={() => setEditingDomain(null)}
-                                variant="outline"
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <span className="flex-grow">{domain.domain}</span>
-                              <Button
-                                onClick={() => setEditingDomain(domain)}
-                                variant="outline"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                onClick={() => deleteDomain(domain.id)}
-                                variant="destructive"
-                              >
-                                Delete
-                              </Button>
-                            </>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="flex-grow ">
+                    {certificates.length > 0 ? (
+                      <ul className="space-y-1">
+                        {certificates.map((cert) => (
+                          <li
+                            key={cert.id}
+                            className="flex items-center justify-between"
+                          >
+                            <span className="flex-shrink-0 w-1/4 truncate">
+                              {cert.name}
+                            </span>
+                            <span className="flex-shrink-0 w-1/4 truncate">
+                              {cert.certificate}
+                            </span>
+                            <span className="flex-shrink-0 w-1/4 truncate">
+                              {cert.action_status}
+                            </span>
+                            <Badge variant="destructive" className="w-1/8">
+                              {new Date(cert.expiration).toLocaleDateString()}
+                            </Badge>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-center">
+                        No certificates need renewal at this time.
+                      </p>
+                    )}
                   </CardContent>
                   {/* <ScrollBar orientation="vertical" /> */}
+                  {/* <ScrollBar orientation="horizontal" /> */}
                   {/* </ScrollArea> */}
                 </div>
               </Card>
-            )}
-          </div>
-          {/* </CardContent>
+            </div>
+            {/* </CardContent>
           </Card> */}
-        </div>
+          </div>
 
-        {/* Suggestions Card*/}
-        <div className="w-full overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 overflow-hidden">
-          <Card className="col-span-full">
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <BellIcon className="h-6 w-6" />
-      Employee Suggestions
-    </CardTitle>
-  </CardHeader>
-  <CardContent>
-    {suggestions.length === 0 ? (
-      <p>No suggestions submitted yet.</p>
-    ) : (
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Submitted By</TableHead>
-              <TableHead>Suggestion</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {suggestions.map((suggestion) => (
-              <TableRow key={suggestion.id}>
-                <TableCell>{suggestion.created_by}</TableCell>
-                <TableCell>{suggestion.suggestion}</TableCell>
-                <TableCell>
-                  {new Date(suggestion.created_at).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  {suggestion.is_read ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-green-100 text-green-800"
-                    >
-                      Replied
-                    </Badge>
+          {/* Suggestions Card*/}
+          <div className="w-full overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 overflow-hidden">
+              <Card className="col-span-full">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BellIcon className="h-6 w-6" />
+                    Employee Suggestions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {suggestions.length === 0 ? (
+                    <p>No suggestions submitted yet.</p>
                   ) : (
-                    <Badge
-                      variant="outline"
-                      className="bg-yellow-100 text-yellow-800"
-                    >
-                      Pending
-                    </Badge>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Submitted By</TableHead>
+                            <TableHead>Suggestion</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {suggestions.map((suggestion) => (
+                            <TableRow key={suggestion.id}>
+                              <TableCell>{suggestion.created_by}</TableCell>
+                              <TableCell>{suggestion.suggestion}</TableCell>
+                              <TableCell>
+                                {new Date(
+                                  suggestion.created_at
+                                ).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                {suggestion.is_read ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-green-100 text-green-800"
+                                  >
+                                    Replied
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-yellow-100 text-yellow-800"
+                                  >
+                                    Pending
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        disabled={suggestion.is_read}
+                                      >
+                                        {suggestion.is_read
+                                          ? "Replied"
+                                          : "Reply"}
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80">
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium">
+                                          Reply to Suggestion
+                                        </h4>
+                                        <Textarea
+                                          placeholder="Type your reply here..."
+                                          value={replyText}
+                                          onChange={(e) =>
+                                            setReplyText(e.target.value)
+                                          }
+                                        />
+                                        <Button
+                                          onClick={() =>
+                                            handleReply(suggestion)
+                                          }
+                                        >
+                                          Send Reply
+                                        </Button>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                  {suggestion.is_read && (
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <Button variant="outline">View</Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-80">
+                                        <div className="space-y-2">
+                                          <h4 className="font-medium">
+                                            Reply Sent
+                                          </h4>
+                                          <p className="text-sm">
+                                            {suggestion.reply}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Replied by: {suggestion.replied_by}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Replied at:{" "}
+                                            {new Date(
+                                              suggestion.replied_at || ""
+                                            ).toLocaleString()}
+                                          </p>
+                                        </div>
+                                      </PopoverContent>
+                                    </Popover>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Super Admin Only*/}
+          <div className="w-full overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 my-2 gap-6 overflow-hidden">
+              {/* File Upload Section */}
+              {role === "super admin" && (
+                <Card className="flex flex-col h-full">
+                  <CardHeader className="flex-shrink-0">
+                    <CardTitle className="flex items-center gap-2">
+                      <CalendarIcon className="h-6 w-6" />
+                      Select Date For Chart & Table
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col flex-shrink-0 overflow-hidden">
+                    <div className="mt-4 rounded-md border">
+                      <div className="flex flex-col items-start gap-2 p-2">
+                        <label className="flex items-center gap-2 p-2 rounded-md cursor-pointer border border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full">
+                          <Input
+                            type="file"
+                            accept=".csv,.xlsx"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          <span>{fileName || "Select File"}</span>
+                        </label>
                         <Button
                           variant="outline"
-                          disabled={suggestion.is_read}
+                          onClick={handleSubmit}
+                          className="w-full"
+                          disabled={loading || !file}
                         >
-                          {suggestion.is_read ? "Replied" : "Reply"}
+                          {loading ? "Uploading..." : "Upload & Process"}
                         </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="space-y-2">
-                          <h4 className="font-medium">
-                            Reply to Suggestion
-                          </h4>
-                          <Textarea
-                            placeholder="Type your reply here..."
-                            value={replyText}
-                            onChange={(e) =>
-                              setReplyText(e.target.value)
-                            }
-                          />
-                          <Button
-                            onClick={() => handleReply(suggestion)}
+                      </div>
+                    </div>
+
+                    {loading && <Progress value={progress} className="mt-4" />}
+                  </CardContent>
+                </Card>
+              )}
+
+              {role === "super admin" && !loading && (
+                <Card className="flex flex-col overflow-hidden">
+                  <CardHeader>
+                    <CardTitle>Manage Approved Domains</CardTitle>
+                    <CardDescription>
+                      Add, edit, or remove domains for internal email addresses.
+                    </CardDescription>
+                  </CardHeader>
+                  <div className="flex-grow overflow-hidden">
+                    {/* <ScrollArea className="h-[calc(100vh-1000px)] overflow-auto"> */}
+                    <CardContent>
+                      <div className="mb-4 flex items-center space-x-2">
+                        <Input
+                          type="text"
+                          value={newDomain}
+                          onChange={(e) => setNewDomain(e.target.value)}
+                          placeholder="Enter new domain"
+                          className="flex-grow"
+                        />
+                        <Button variant="outline" onClick={addDomain}>
+                          Add Domain
+                        </Button>
+                      </div>
+
+                      <ul className="space-y-2 flex flex-col flex-shrink-0">
+                        {domains.map((domain) => (
+                          <li
+                            key={domain.id}
+                            className="flex items-center space-x-2"
                           >
-                            Send Reply
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    {suggestion.is_read && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="outline">View</Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-2">
-                            <h4 className="font-medium">Reply Sent</h4>
-                            <p className="text-sm">{suggestion.reply}</p>
-                            <p className="text-xs text-gray-500">
-                              Replied by: {suggestion.replied_by}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Replied at: {new Date(suggestion.replied_at || '').toLocaleString()}
-                            </p>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    )}
+                            {editingDomain && editingDomain.id === domain.id ? (
+                              <>
+                                <Input
+                                  type="text"
+                                  value={editingDomain.domain}
+                                  onChange={(e) =>
+                                    setEditingDomain({
+                                      ...editingDomain,
+                                      domain: e.target.value,
+                                    })
+                                  }
+                                  className="flex-grow"
+                                />
+                                <Button
+                                  onClick={updateDomain}
+                                  variant="outline"
+                                >
+                                  Save
+                                </Button>
+                                <Button
+                                  onClick={() => setEditingDomain(null)}
+                                  variant="outline"
+                                >
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="flex-grow">
+                                  {domain.domain}
+                                </span>
+                                <Button
+                                  onClick={() => setEditingDomain(domain)}
+                                  variant="outline"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  onClick={() => deleteDomain(domain.id)}
+                                  variant="destructive"
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    {/* <ScrollBar orientation="vertical" /> */}
+                    {/* </ScrollArea> */}
                   </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    )}
-  </CardContent>
-</Card>
+                </Card>
+              )}
+            </div>
+            {/* </CardContent>
+          </Card> */}
+          </div>
+
+          {/* Sales Chart*/}
+          <div className="col-span-full overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 overflow-hidden">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarIcon className="h-6 w-6" />
+                    Select Date For Chart & Table
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-shrink-0 overflow-hidden">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full pl-3 text-left font-normal mb-2"
+                      >
+                        {format(selectedRange.start, "PPP")}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CustomCalendar
+                        selectedDate={selectedRange.start}
+                        onDateChange={handleRangeChange}
+                        disabledDays={() => false}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Gross Sales
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ${totalGross.toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Net Sales With Firearms
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ${totalNet.toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Net Sales Without Firearms
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ${totalNetMinusExclusions.toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <Card className="flex flex-col col-span-full h-full mt-2 mb-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChartIcon className="h-6 w-6" />
+                  Sales Report Chart
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-hidden">
+                <SalesRangeStackedBarChart selectedRange={selectedRange} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sales Report Table*/}
+          <div className="col-span-full overflow-hidden mt-2">
+            <Card className="flex flex-col col-span-full h-full">
+              <CardHeader className="flex-shrink-0">
+                <CardTitle className="flex items-center gap-2">
+                  <TableIcon className="h-6 w-6" />
+                  Sales Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col max-h-[calc(100vh-600px)] overflow-hidden">
+                <Suspense fallback={<div>Loading...</div>}>
+                  <div className=" overflow-hidden ">
+                    <SalesDataTable
+                      startDate={format(selectedRange.start, "yyyy-MM-dd")}
+                      endDate={format(selectedRange.end, "yyyy-MM-dd")}
+                    />
+                  </div>
+                </Suspense>
+              </CardContent>
+            </Card>
           </div>
         </div>
-
-        {/* Sales Chart*/}
-        <div className="col-span-full overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-hidden mb-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Gross Sales
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${totalGross.toFixed(2)}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Net Sales With Firearms
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${totalNet.toFixed(2)}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Net Sales Without Firearms
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${totalNetMinusExclusions.toFixed(2)}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <Card className="flex flex-col col-span-full h-full">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChartIcon className="h-6 w-6" />
-                Sales Report Chart
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="max-w-[calc(100vw-100px)] overflow-hidden">
-              <SalesRangeStackedBarChart selectedRange={selectedRange} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sales Report Table*/}
-        <div className="col-span-full overflow-hidden">
-          <Card className="flex flex-col col-span-full h-full">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="flex items-center gap-2">
-                <TableIcon className="h-6 w-6" />
-                Sales Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col max-h-[calc(100vh-600px)] overflow-hidden">
-              <Suspense fallback={<div>Loading...</div>}>
-                <div className=" overflow-hidden ">
-                  <SalesDataTable
-                    startDate={format(selectedRange.start, "yyyy-MM-dd")}
-                    endDate={format(selectedRange.end, "yyyy-MM-dd")}
-                  />
-                </div>
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
       </div>
-    </div>
+    </RoleBasedWrapper>
   );
 }
 

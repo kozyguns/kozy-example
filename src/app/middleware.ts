@@ -44,8 +44,14 @@ export async function middleware(request: NextRequest) {
 
     // Redirect to the correct profile page based on role
     if (url.pathname === "/auth" || url.pathname === "/") {
+      if (userRole === "admin" || userRole === "super admin") {
+        return NextResponse.redirect(
+          new URL("/admin/reports/dashboard", request.url)
+        );
+      } else {
       return NextResponse.redirect(new URL(`/team/crew/profile/${employeeId}`, request.url));
     }
+  }
   }
 
   return NextResponse.next();
