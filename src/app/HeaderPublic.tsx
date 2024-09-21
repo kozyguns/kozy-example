@@ -45,7 +45,7 @@ const HeaderPublic = React.memo(() => {
       </NavigationMenu>
       <div className="flex items-center mr-1">
         <Link href="/sign-in">
-          <Button variant="linkHover1">Sign In</Button>
+          <Button variant="linkHover2">Sign In</Button>
         </Link>
         {/* <Link href="/">
           <Button variant="linkHover2" size="icon">
