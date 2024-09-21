@@ -151,9 +151,14 @@ const SalesRangeStackedBarChart: React.FC<SalesRangeStackedBarChartProps> = ({
           Total - Firearms: ${totalGrossMinusExclusions.toFixed(2)}
         </p>
       </div> */}
-      <ResponsiveContainer width="100%" height="100%">
-        <div className="overflow-hidden">
-          <ScrollArea className="w-[calc(100vw-90px)] overflow-auto">
+      <div className="overflow-hidden">
+        <ScrollArea
+          className={classNames(
+            styles.noScroll,
+            "w-[calc(100vw-90px)] overflow-auto"
+          )}
+        >
+          <ResponsiveContainer width="100%" height="100%">
             <div style={{ minWidth: chartData.length * 100 }}>
               <BarChart
                 data={chartData}
@@ -171,10 +176,11 @@ const SalesRangeStackedBarChart: React.FC<SalesRangeStackedBarChartProps> = ({
                 }}
               />
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-        </div>
-      </ResponsiveContainer>
+          </ResponsiveContainer>
+          <ScrollBar orientation="horizontal" />
+          <ScrollBar orientation="vertical" />
+        </ScrollArea>
+      </div>
     </div>
   );
 };
