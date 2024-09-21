@@ -70,11 +70,11 @@ export default function Pricing({ user, products, subscription }: Props) {
       <div className="sm:flex sm:flex-col sm:align-center">
         <div className="w-full mx-auto items-center justify-center max-w-xl">
           <Image
-            src="/pands.png"
+            src="/teal.png"
             alt="Banner"
             layout="responsive"
-            width={500}
-            height={183}
+            width={457}
+            height={156}
             quality={100}
             objectFit="contain"
           />
