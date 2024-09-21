@@ -12,6 +12,7 @@ import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 import { EditEmployeeDialog } from "./PopoverForm";
 import { Button } from "@/components/ui/button";
 import { PlusCircledIcon } from "@radix-ui/react-icons";
+import { Label } from "@/components/ui/label";
 
 interface WeeklySchedule {
   [day: string]: { start_time: string | null; end_time: string | null };
@@ -22,29 +23,45 @@ export default function EmployeesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showTerminated, setShowTerminated] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
   );
 
   const fetchEmployees = async () => {
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("employees")
-      .select("*")
-      .order("name");
-
-    if (error) {
+    try {
+      let query = supabase
+        .from("employees")
+        .select("*")
+        .order("name");
+      
+      if (!showTerminated) {
+        // Only fetch active employees if showTerminated is false
+        query = query.neq('status', 'terminated');
+      }
+  
+      const { data, error } = await query;
+  
+      if (error) {
+        throw error;
+      }
+  
+      if (data) {
+        setEmployees(data as Employee[]);
+      }
+    } catch (error) {
       console.error("Error fetching employees:", error);
       toast.error("Failed to fetch employees");
-    } else {
-      setEmployees(data as Employee[]);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
-
+  
+  // Update the useEffect to depend on showTerminated
   useEffect(() => {
     fetchEmployees();
-  }, []);
+  }, [showTerminated]);
 
   const handleAddEmployee = async (
     newEmployee: Omit<Employee, "employee_id">
@@ -91,7 +108,42 @@ export default function EmployeesPage() {
     }
   }, []);
 
-  const handleDeleteEmployee = useCallback(async (employeeId: number) => {
+  const handleTermEmployee = async (employeeId: number, termDate: string) => {
+    try {
+      // Update the employee record
+      const { error: updateError } = await supabase
+        .from("employees")
+        .update({ term_date: termDate, status: "terminated" })
+        .eq("employee_id", employeeId);
+
+      if (updateError) throw updateError;
+
+      // Delete records from reference_schedules
+      const { error: deleteRefError } = await supabase
+        .from("reference_schedules")
+        .delete()
+        .eq("employee_id", employeeId);
+
+      if (deleteRefError) throw deleteRefError;
+
+      // Delete future schedules
+      const { error: deleteSchedError } = await supabase
+        .from("schedules")
+        .delete()
+        .eq("employee_id", employeeId)
+        .gte("schedule_date", termDate);
+
+      if (deleteSchedError) throw deleteSchedError;
+
+      toast.success("Employee terminated successfully");
+      await fetchEmployees(); // Refresh the employee list
+    } catch (error) {
+      console.error("Error terminating employee:", error);
+      toast.error("Failed to terminate employee");
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: number) => {
     const { error } = await supabase
       .from("employees")
       .delete()
@@ -99,14 +151,11 @@ export default function EmployeesPage() {
 
     if (error) {
       console.error("Error deleting employee:", error);
-      toast.error("Failed to delete employee");
+      throw error; // This will be caught in the EmployeeTableRowActions component
     } else {
-      setEmployees((prevEmployees) =>
-        prevEmployees.filter((emp) => emp.employee_id !== employeeId)
-      );
-      toast.success("Employee deleted successfully");
+      await fetchEmployees(); // Refresh the employee list
     }
-  }, []);
+  };
 
   const handleUpdateSchedule = useCallback(
     async (employeeId: number, schedules: WeeklySchedule) => {
@@ -202,16 +251,22 @@ export default function EmployeesPage() {
             cell: ({ row }: { row: Row<Employee> }) => (
               <EmployeeTableRowActions
                 row={row}
-                onEdit={handleOpenDialog}
+                onEdit={handleEditEmployee}
                 onDelete={handleDeleteEmployee}
                 onUpdateSchedule={handleUpdateSchedule}
+                onTerm={handleTermEmployee}
               />
             ),
           };
         }
         return col;
       }),
-    [handleOpenDialog, handleDeleteEmployee, handleUpdateSchedule]
+    [
+      handleEditEmployee,
+      handleDeleteEmployee,
+      handleUpdateSchedule,
+      handleTermEmployee,
+    ]
   );
 
   return (
@@ -223,6 +278,14 @@ export default function EmployeesPage() {
             <PlusCircledIcon className="mr-2 h-4 w-4" />
             Add Employee
           </Button>
+          <Label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={showTerminated}
+                onChange={(e) => setShowTerminated(e.target.checked)}
+              />
+              <span>Show Terminated Employees</span>
+            </Label>
         </div>
         {isLoading ? (
           <p>Loading employees...</p>
