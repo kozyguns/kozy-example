@@ -15,10 +15,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Image from "next/image";
 import { toast } from "sonner";
 import { signup, signInWithGoogle } from "@/lib/auth-actions"; // Import the signup and signInWithGoogle functions
 import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 // Define the validation schema using Zod
 const schema = z.object({
@@ -85,7 +85,7 @@ export default function SignUp() {
   return (
     <div className="grid place-items-center h-screen">
       <Card className="mx-auto max-w-sm">
-        <CardHeader>
+      <CardHeader>
           <CardTitle className="text-xl">Sign Up</CardTitle>
           <CardDescription>
             <div className="text-center space-y-3">
@@ -114,7 +114,7 @@ export default function SignUp() {
                     <Input
                       {...field}
                       id="first_name"
-                      placeholder="Ash"
+                      placeholder="Max"
                       required
                     />
                   )}
@@ -134,7 +134,7 @@ export default function SignUp() {
                     <Input
                       {...field}
                       id="last_name"
-                      placeholder="Ketchum"
+                      placeholder="Robinson"
                       required
                     />
                   )}
@@ -156,7 +156,7 @@ export default function SignUp() {
                     {...field}
                     id="email"
                     type="email"
-                    placeholder="catchemall@example.com"
+                    placeholder="m@example.com"
                     required
                   />
                 )}
@@ -188,17 +188,22 @@ export default function SignUp() {
                 </span>
               )}
             </div>
-            <Button variant="gooeyLeft" type="submit" className="w-full mb-4">
+            <Button
+              variant="gooeyRight"
+              type="submit"
+              className="w-full mb-4 mt-2"
+            >
               Sign Up With Email
             </Button>
           </form>
           <Separator className="my-4" />
+
           <Button
             onClick={handleGoogleSignUp}
             variant="outline"
             className="w-full mt-4"
           >
-            Sign Up With Google
+            Sign Up with Google
           </Button>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}

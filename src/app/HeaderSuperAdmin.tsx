@@ -333,6 +333,16 @@ const comboComps = [
     href: "/team/rentals/checklist",
     description: "Rental Inventory Check",
   },
+  {
+    title: "Products Test Page",
+    href: "/pricing",
+    description: "Trial Products Page",
+  },
+  {
+    title: "Classes Test Page",
+    href: "/public/classes",
+    description: "Class Scheduling Page",
+  },
 ];
 
 const HeaderSuperAdmin = React.memo(() => {

@@ -18,9 +18,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
-import { login } from "@/lib/auth-actions"; // Import the login function
 import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 const schema = z.object({
   email: z
@@ -49,22 +48,46 @@ export default function SignIn() {
   });
 
   const onSubmit = async (data: FormData) => {
+    const { email, password } = data;
+
     try {
-      const formData = new FormData();
-      formData.append("email", data.email);
-      formData.append("password", data.password);
+      const { data: signInData, error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      const result = await login(formData);
+      if (error) throw error;
 
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.success) {
-        toast.success("Signed in successfully");
-        router.push("/"); // Redirect to home page after sign-in
+      if (signInData.user) {
+        const user = signInData.user;
+
+        // Fetch the customer's role from the customers table
+        const { data: customerData, error: fetchError } = await supabase
+          .from("customers")
+          .select("role")
+          .eq("user_uuid", user.id)
+          .single();
+
+        if (fetchError) {
+          console.error("Error fetching customer role:", fetchError.message);
+          toast.error("An error occurred. Please try again.");
+          return;
+        }
+
+        if (customerData) {
+          toast.success("Signed in successfully");
+          window.location.href = "/"; // Redirect to home page after sign-in
+        }
       }
     } catch (error) {
-      console.error("Error signing in:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      if (error instanceof Error) {
+        console.error("Error signing in:", error.message);
+        toast.error(error.message);
+      } else {
+        console.error("Unexpected error signing in:", error);
+        toast.error("Unexpected error occurred.");
+      }
     }
   };
 
@@ -116,7 +139,7 @@ export default function SignIn() {
   return (
     <div className="grid place-items-center h-screen">
       <Card className="mx-auto min-w-[350px]">
-        <CardHeader>
+      <CardHeader>
           <CardTitle className="text-xl">Login</CardTitle>
           <CardDescription>
             <div className="text-center space-y-3">
@@ -133,6 +156,11 @@ export default function SignIn() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="membersLogin">
+            {/* <TabsList className="flex">
+              <TabsTrigger value="membersLogin">Members Login</TabsTrigger>
+              <TabsTrigger value="employeesLogin">Employees Login</TabsTrigger>
+            </TabsList> */}
+
             <TabsContent value="membersLogin">
               <form onSubmit={handleSubmit(onSubmit)} className="grid gap-2">
                 <div className="grid gap-2">
@@ -145,7 +173,7 @@ export default function SignIn() {
                         {...field}
                         id="email"
                         type="email"
-                        placeholder="management@example.com"
+                        placeholder="admin@example.com"
                         required
                       />
                     )}
@@ -177,7 +205,11 @@ export default function SignIn() {
                     </span>
                   )}
                 </div>
-                <Button variant="gooeyRight" type="submit" className="w-full mb-4">
+                <Button
+                  variant="gooeyLeft"
+                  type="submit"
+                  className="w-full mb-4 mt-2"
+                >
                   Sign In With Email
                 </Button>
                 <Separator className="my-4" />
@@ -203,6 +235,22 @@ export default function SignIn() {
                 </Link>
               </div>
             </TabsContent>
+
+            {/* <TabsContent value="employeesLogin">
+              <div className="flex flex-col my-4 items-center justify-center">
+                <div className="flex flex-col gap-1 my-4">
+                  <Label htmlFor="email">Login With Your Work Email</Label>
+                  <Button
+                    onClick={() => loginWithOAuth("google")}
+                    variant="gooeyRight"
+                    className="w-full"
+                    disabled={loading}
+                  >
+                    {loading ? "Logging in..." : "Login with Google"}
+                  </Button>
+                </div>
+              </div>
+            </TabsContent> */}
           </Tabs>
         </CardContent>
       </Card>
