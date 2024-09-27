@@ -32,6 +32,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
   DropdownMenuSubContent,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
 
@@ -136,7 +137,7 @@ const HeaderUser = React.memo(() => {
             </NavigationMenuItem>
             <NavigationMenuItem>
               <Link href="/team/sop">
-                <Button variant="linkHover2">Team SOPs</Button>
+                <Button variant="linkHover2">AHR SOPs</Button>
               </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
@@ -204,16 +205,19 @@ const HeaderUser = React.memo(() => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mr-2">
+                  <DropdownMenuLabel>Profile & Settings</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
                   {/* <DropdownMenuItem>
                     <Link
                       href="/team/employees/profiles"
                       className="flex items-center w-full"
                     >
                       <PersonIcon className="mr-2 h-4 w-4" />
-                      <span>Manage Your Profile</span>
+
+                      <span>Manage Profile</span>
                     </Link>
                   </DropdownMenuItem>
-
                   <DropdownMenuSeparator /> */}
 
                   <DropdownMenuSub>

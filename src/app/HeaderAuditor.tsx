@@ -1,6 +1,5 @@
 "use client";
 
-
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -24,9 +23,9 @@ import {
 import { cn } from "@/lib/utils";
 import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 import { supabase } from "@/utils/supabase/client";
-import useUnreadMessages from "@/pages/api/fetch-unread";
-import useUnreadOrders from "@/pages/api/useUnreadOrders"; // Import the hook
-import useUnreadTimeOffRequests from "@/pages/api/useUnreadTimeOffRequests"; // Import the hook
+// import useUnreadMessages from "@/app/api/fetch-unread/route";
+// import useUnreadOrders from "@/app/api/useUnreadOrders/route"; // Import the hook
+// import useUnreadTimeOffRequests from "@/app/api/useUnreadTimeOffRequests/route"; // Import the hook
 import { useRouter } from "next/navigation"; // Import useRouter
 import {
   DropdownMenu,
@@ -47,6 +46,7 @@ import {
   MoonIcon,
 } from "@radix-ui/react-icons";
 import { useTheme } from "next-themes";
+import { useUnreadCounts } from "@/components/UnreadCountsContext";
 
 const auditComponents = [
   {
@@ -67,11 +67,11 @@ const schedComponents = [
     href: "/team/crew/calendar",
     description: "Where Dey At",
   },
-  // {
-  //   title: "Submit Time Off",
-  //   href: "/team/crew/timeoffrequest",
-  //   description: "Submit A Request",
-  // },
+  {
+    title: "Submit Time Off",
+    href: "/team/crew/timeoffrequest",
+    description: "Submit A Request",
+  },
 ];
 
 const serviceComponents = [
@@ -156,7 +156,7 @@ const reportsComps = [
 
 const sopComps = [
   {
-    title: "Team SOPs",
+    title: "AHR SOPs",
     href: "/team/sop",
     description: "SOPs For Front Of The House",
   },
@@ -177,8 +177,11 @@ const profileComps = [
 
 const HeaderAuditor = React.memo(() => {
   const [user, setUser] = useState<any>(null);
-  const router = useRouter(); // Instantiate useRouter
+  const router = useRouter();
   const { setTheme } = useTheme();
+  const { resetUnreadCounts } = useUnreadCounts();
+  const { totalUnreadCount: globalUnreadCount } = useUnreadCounts();
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -190,9 +193,24 @@ const HeaderAuditor = React.memo(() => {
     fetchUser();
   }, []);
 
-  const unreadCount = useUnreadMessages(user?.id); // Use the hook to get unread messages
-  const unreadOrderCount = useUnreadOrders(); // Use the hook to get unread orders
-  const unreadTimeOffCount = useUnreadTimeOffRequests(); // Use the hook to get unread time-off requests
+  useEffect(() => {
+    setTotalUnreadCount(globalUnreadCount);
+  }, [globalUnreadCount]);
+
+  useEffect(() => {
+    const handleUnreadCountsChanged = () => {
+      setTotalUnreadCount(globalUnreadCount);
+    };
+
+    window.addEventListener("unreadCountsChanged", handleUnreadCountsChanged);
+
+    return () => {
+      window.removeEventListener(
+        "unreadCountsChanged",
+        handleUnreadCountsChanged
+      );
+    };
+  }, [globalUnreadCount]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -237,6 +255,9 @@ const HeaderAuditor = React.memo(() => {
           }
         }
       }
+
+      // Reset the unread count using the context
+      resetUnreadCounts();
 
       // Navigate to the chat page
       router.push("/team/crew/chat");
@@ -376,17 +397,41 @@ const HeaderAuditor = React.memo(() => {
                     variant="linkHover2"
                     size="icon"
                     className="mr-2 relative"
+                    onClick={handleChatClick}
                   >
                     <PersonIcon />
-                    {unreadCount > 0 && (
+                    {totalUnreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 text-red-500 text-xs font-bold">
-                        {unreadCount}
+                        {totalUnreadCount}
                       </span>
                     )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mr-2">
                   <DropdownMenuLabel>Profile & Settings</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  {/* <DropdownMenuItem>
+                    <Link
+                      href="/team/employees/profiles"
+                      className="flex items-center w-full"
+                    >
+                      <PersonIcon className="mr-2 h-4 w-4" />
+
+                      <span>Manage Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator /> */}
+                  <DropdownMenuItem onClick={handleChatClick}>
+                    <ChatBubbleIcon className="mr-2 h-4 w-4" />
+                    <span>Messages</span>
+                    {totalUnreadCount > 0 && (
+                      <span className="ml-auto text-red-500 font-bold">
+                        {totalUnreadCount}
+                      </span>
+                    )}
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
 
                   <DropdownMenuSub>
@@ -407,18 +452,6 @@ const HeaderAuditor = React.memo(() => {
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={handleChatClick}>
-                    <ChatBubbleIcon className="mr-2 h-4 w-4" />
-                    <span>Messages</span>
-                    {unreadCount > 0 && (
-                      <span className="ml-auto text-red-500 font-bold">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={handleSignOut}>

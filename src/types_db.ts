@@ -29,6 +29,38 @@ export interface Database {
           stripe_customer_id: string | null;
         };
       };
+      class_enrollments: {
+        Row: {
+          id: number;
+          user_id: string | null;
+          class_id: number | null;
+          payment_status: string;
+          stripe_session_id: string | null;
+          created_at: string;
+          updated_at: string;
+          user_name: string | null;
+        };
+        Insert: {
+          id?: number;
+          user_id?: string | null;
+          class_id?: number | null;
+          payment_status: string;
+          stripe_session_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          user_name?: string | null;
+        };
+        Update: {
+          id?: number;
+          user_id?: string | null;
+          class_id?: number | null;
+          payment_status?: string;
+          stripe_session_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          user_name?: string | null;
+        };
+      };
       products: {
         Row: {
           id: string;
@@ -52,6 +84,32 @@ export interface Database {
           interval_count: number | null;
           trial_period_days: number | null;
           metadata: Json | null;
+        };
+        Insert: {
+          id: string;
+          product_id?: string | null;
+          active?: boolean | null;
+          currency?: string | null;
+          description?: string | null;
+          type?: string | null;
+          unit_amount?: number | null;
+          interval?: string | null;
+          interval_count?: number | null;
+          trial_period_days?: number | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          product_id?: string | null;
+          active?: boolean | null;
+          currency?: string | null;
+          description?: string | null;
+          type?: string | null;
+          unit_amount?: number | null;
+          interval?: string | null;
+          interval_count?: number | null;
+          trial_period_days?: number | null;
+          metadata?: Json | null;
         };
       };
       subscriptions: {
@@ -121,10 +179,9 @@ export interface Database {
 export type Tables<T extends keyof Database["public"]["Tables"]> =
   Database["public"]["Tables"][T]["Row"];
 export type Customers = Tables<"customers">;
+export type ClassEnrollments = Tables<"class_enrollments">;
 export type Products = Tables<"products">;
-export type Price = Tables<"prices"> & {
-  type: "one_time" | "recurring";
-};
+export type Price = Database["public"]["Tables"]["prices"]["Row"];
 export type Subscriptions = Tables<"subscriptions">;
 export type Invoices = Tables<"invoices">;
 export type InvoiceItems = Tables<"invoice_items">;

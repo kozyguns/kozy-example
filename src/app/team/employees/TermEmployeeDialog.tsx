@@ -1,4 +1,4 @@
-// src/app/TGR/employees/TermEmployeeDialog.tsx
+// src/app/team/employees/TermEmployeeDialog.tsx
 
 import { useState } from "react";
 import {

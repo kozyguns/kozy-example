@@ -248,7 +248,7 @@ const SalesDataTable: React.FC<SalesDataTableProps> = ({
           onChange={(event) =>
             table.getColumn("Lanid")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm w-full"
+          className=" max-w-sm w-full"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -282,7 +282,7 @@ const SalesDataTable: React.FC<SalesDataTableProps> = ({
           <ScrollArea
             className={classNames(
               styles.noScroll,
-              "h-[calc(100vh-400px)] w-[calc(100vw-100px)] overflow-auto"
+              "h-[calc(100vh-500px)] w-[calc(100vw-100px)] overflow-auto"
             )}
           >
             <Table className="w-full overflow-hidden">
@@ -304,10 +304,10 @@ const SalesDataTable: React.FC<SalesDataTableProps> = ({
               </TableHeader>
               <TableBody className="overflow-hidden">
                 {isLoading ? (
-                  <TableRow>
+                  <TableRow className="overflow-hidden">
                     <TableCell
                       colSpan={columns.length}
-                      className="h-24 text-center overflow-hidden"
+                      className="h-24 text-center"
                     >
                       Loading...
                     </TableCell>
@@ -329,10 +329,10 @@ const SalesDataTable: React.FC<SalesDataTableProps> = ({
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>
+                  <TableRow className="overflow-hidden">
                     <TableCell
                       colSpan={columns.length}
-                      className="h-24 text-center"
+                      className="h-24 text-left"
                     >
                       No results found.
                     </TableCell>

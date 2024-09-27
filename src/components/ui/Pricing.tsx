@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
+import { useTransition } from "react";
+import { Price } from "@/types_db"; // Make sure to export this type from your types_db.ts file
 
 type Product = Tables<"products"> & { prices: Tables<"prices">[] };
 type Customer = Tables<"customers">;
@@ -27,28 +29,35 @@ export default function Pricing({ user, products, subscription }: Props) {
     useState<BillingInterval>("one_time");
   const [priceIdLoading, setPriceIdLoading] = useState<string>();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isPending, startTransition] = useTransition();
 
-  const handleStripeCheckout = async (
-    price: Tables<"prices"> & { type: "one_time" | "recurring" }
-  ) => {
-    setPriceIdLoading(price.id);
+  const handleStripeCheckout = async (price: Price, product: Product) => {
     if (!user) {
       return router.push("/sign-in");
     }
-    try {
-      const { sessionId, error } = await checkoutWithStripe(price, "/");
-      if (error) {
-        throw new Error(error.message);
+    startTransition(async () => {
+      try {
+        const billingInterval: "one_time" | "month" | "year" =
+          price.type === "recurring"
+            ? price.interval === "year" || price.interval === "month"
+              ? price.interval
+              : "month" // Default to "month" if interval is not "year" or "month"
+            : "one_time";
+
+        const { sessionId } = await checkoutWithStripe(price, {
+          productId: product.id,
+          productName: product.name,
+          billingInterval,
+        });
+
+        if (sessionId) {
+          const stripe = await getStripe();
+          stripe?.redirectToCheckout({ sessionId });
+        }
+      } catch (error) {
+        alert((error as Error)?.message);
       }
-      if (sessionId) {
-        const stripe = await getStripe();
-        stripe?.redirectToCheckout({ sessionId });
-      }
-    } catch (error) {
-      return alert((error as Error)?.message);
-    } finally {
-      setPriceIdLoading(undefined);
-    }
+    });
   };
 
   if (!products.length) {
@@ -56,7 +65,7 @@ export default function Pricing({ user, products, subscription }: Props) {
   }
 
   const intervals = [
-    { value: "one_time", label: "A La Carte" },
+    { value: "one_time", label: "Products" },
     { value: "month", label: "Monthly" },
     { value: "year", label: "Annual" },
   ];
@@ -68,20 +77,20 @@ export default function Pricing({ user, products, subscription }: Props) {
   return (
     <div className="max-w-6xl px-4 py-4 mx-auto sm:py-24 sm:px-6 lg:px-8">
       <div className="sm:flex sm:flex-col sm:align-center">
-        <div className="w-full mx-auto items-center justify-center max-w-xl">
+        <div className="w-full mx-auto items-center justify-center max-w-3xl">
           <Image
-            src="/teal.png"
+            src="/MembershipBanner.png"
             alt="Banner"
             layout="responsive"
-            width={457}
-            height={156}
+            width={1211}
+            height={386}
             quality={100}
             objectFit="contain"
           />
 
-          <p className="max-w-3xl m-auto mt-4 text-xl sm:text-center sm:text-2xl">
-            Let&apos;s get to work on your business needs! <br />
-            We offer staff management, payroll, time tracking, and more!
+          <p className="max-w-2xl m-auto text-xl sm:text-center sm:text-2xl">
+            Let&apos;s get you set up with a subscription that&apos;s a ...
+            blast... and works best for your goals!
           </p>
         </div>
         <div className="relative self-center mt-6 rounded-lg p-0.5 flex sm:mt-8 border border-zinc-800">
@@ -173,7 +182,8 @@ export default function Pricing({ user, products, subscription }: Props) {
                       handleStripeCheckout(
                         price as Tables<"prices"> & {
                           type: "one_time" | "recurring";
-                        }
+                        },
+                        product
                       )
                     }
                     className="w-full py-2 mt-8 text-sm font-semibold text-center rounded-md hover:bg-muted"

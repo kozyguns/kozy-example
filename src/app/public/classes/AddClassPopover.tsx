@@ -10,13 +10,14 @@ import { Label } from "@/components/ui/label";
 import { toZonedTime, format as formatTZ } from "date-fns-tz";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/utils/supabase/client";
 
 interface PopoverFormProps {
   onSubmit: (id: string, updates: Partial<ClassScheduleData>) => void;
   buttonText: string;
   placeholder: string;
   initialData?: ClassScheduleData;
-  setClassSchedules: React.Dispatch<React.SetStateAction<ClassScheduleData[]>>;
 }
 
 interface ClassScheduleData {
@@ -34,9 +35,7 @@ interface ClassScheduleData {
 }
 
 export const AddClassPopover: React.FC<PopoverFormProps> = ({
-  onSubmit,
   buttonText,
-  setClassSchedules,
 }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -44,7 +43,34 @@ export const AddClassPopover: React.FC<PopoverFormProps> = ({
   const [endTime, setEndTime] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [price, setPrice] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const addClassMutation = useMutation({
+    mutationFn: async (classData: Partial<ClassScheduleData>) => {
+      const { data, error } = await supabase
+        .from("class_schedules")
+        .insert([classData])
+        .select();
+
+      if (error) throw error;
+      return data[0];
+    },
+    onSuccess: (newClass) => {
+      queryClient.setQueryData(['classSchedules'], (oldData: ClassScheduleData[] | undefined) => {
+        if (oldData) {
+          return [...oldData, newClass];
+        }
+        return [newClass];
+      });
+      toast.success("Class added successfully");
+      resetForm();
+    },
+    onError: (error) => {
+      console.error("Error creating class:", error);
+      toast.error("Failed to create class. Please try again.");
+    },
+  });
 
   const validateForm = () => {
     if (!title.trim()) {
@@ -76,8 +102,6 @@ export const AddClassPopover: React.FC<PopoverFormProps> = ({
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
-    setIsLoading(true);
 
     try {
       const timeZone = "America/Los_Angeles";
@@ -125,18 +149,10 @@ export const AddClassPopover: React.FC<PopoverFormProps> = ({
         price: parseFloat(price),
       };
 
-      await onSubmit("", classData);
-
-      // Use type assertion here
-      setClassSchedules((prev) => [...prev, classData as ClassScheduleData]);
-
-      toast.success("Class added successfully");
-      resetForm();
+      addClassMutation.mutate(classData);
     } catch (error) {
       console.error("Error creating class:", error);
       toast.error("Failed to create class. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -227,9 +243,9 @@ export const AddClassPopover: React.FC<PopoverFormProps> = ({
             variant="linkHover1"
             className="w-full"
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={addClassMutation.isPending}
           >
-            {isLoading ? "Adding Class..." : "Submit"}
+            {addClassMutation.isPending ? "Adding Class..." : "Submit"}
           </Button>
         </div>
       </PopoverContent>

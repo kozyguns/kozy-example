@@ -23,6 +23,7 @@ import { useRole } from "@/context/RoleContext";
 import { EditClassPopover } from "./EditClassPopover";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PaymentButton } from "@/components/PaymentButton";
 
 export interface ClassSchedule {
   id: number;
@@ -161,31 +162,14 @@ export default function Component() {
     }
   };
 
-  const handlePayNow = async (classId: number) => {
-    try {
-      console.log("Initiating payment for class:", classId);
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ classId }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Response not OK:", response.status, data);
-        throw new Error(data.error || "Failed to create checkout session");
-      }
-
-      console.log("Checkout session created:", data.sessionId);
-      router.push(`/checkout?session_id=${data.sessionId}`);
-    } catch (error) {
-      console.error("Detailed error in handlePayNow:", error);
-      toast.error("Failed to initiate payment. Please try again.");
+  useEffect(() => {
+    if (selectedEvent && selectedEvent.length > 0) {
+      const updatedEvents = classSchedules.filter((event) =>
+        isSameDay(new Date(event.start_time), new Date(selectedEvent[0].start_time))
+      );
+      setSelectedEvent(updatedEvents.length > 0 ? updatedEvents : null);
     }
-  };
+  }, [classSchedules, selectedEvent]);
 
   return (
     <div className="container mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -195,7 +179,7 @@ export default function Component() {
           onSubmit={handleAddClass}
           buttonText="Add A Class"
           placeholder="Enter class details"
-          setClassSchedules={setClassSchedules}
+          // setClassSchedules={setClassSchedules}
         />
       )}
 
@@ -274,13 +258,7 @@ export default function Component() {
                     </p>
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <Button
-                      onClick={() => handlePayNow(event.id)}
-                      className=" px-4 py-2"
-                      variant="outline"
-                    >
-                      Purchase A Seat
-                    </Button>
+                    <PaymentButton classId={event.id} />
                     {isAdmin && (
                       <>
                         <EditClassPopover

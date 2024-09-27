@@ -40,7 +40,7 @@ import { useTheme } from "next-themes";
 const accountComponents = [
   {
     title: "Account Settings",
-    href: "/public/profiles",
+    href: "/customer/profiles",
     description: "Manage your account settings and preferences.",
   },
   {
@@ -97,7 +97,7 @@ const HeaderCustomer = React.memo(() => {
 
             <NavigationMenuItem>
               <Link href="/pricing">
-                <Button variant="linkHover2">Products & Services</Button>
+                <Button variant="linkHover2">Products & Pricing</Button>
               </Link>
             </NavigationMenuItem>
 
@@ -186,7 +186,7 @@ const HeaderCustomer = React.memo(() => {
             </>
           ) : (
             <Link href="/sign-in">
-              <Button>Sign In</Button>
+              <Button variant="linkHover1">Sign In</Button>
             </Link>
           )}
           {/* <Link href="/">

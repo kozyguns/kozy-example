@@ -94,7 +94,7 @@ const useRealtimeNotifications = () => {
             : senderName;
 
           // Check if the user is on the chat page
-          const isOnChatPage = pathname === "/team/crew/chat";
+          const isOnChatPage = pathname === "/TGR/crew/chat";
 
           // Fetch the current chat context from localStorage
           const currentChat = localStorage.getItem("currentChat");

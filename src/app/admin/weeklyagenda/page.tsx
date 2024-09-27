@@ -336,7 +336,7 @@ const WeeklyAgenda: React.FC<HomeProps> = () => {
   const handleDelete = async (listId: string, idToDelete: number) => {
     const list = lists.find((list) => list.id === listId);
     const item = list?.items.find((item) => item.id === idToDelete);
-    if (item && item.user_id === user.id) {
+    if ((item && item.user_id === user.id) || role === "super admin") {
       const { error } = await supabase
         .from("items")
         .delete()

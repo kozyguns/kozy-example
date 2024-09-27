@@ -5,7 +5,28 @@ import { FirearmsMaintenanceData, columns } from "./columns";
 import { DataTable } from "./data-table";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import RoleBasedWrapper from "@/components/RoleBasedWrapper";
+import { cycleFirearms } from "@/utils/cycleFirearms";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Toaster, toast } from "sonner";
 import AllFirearmsList from "./AllFirearmsList";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,7 +34,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import styles from "./profiles.module.css";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import classNames from "classnames";
-import { format } from "date-fns-tz";
+import DailyChecklist from "./DailyChecklist";
 
 const words = "Gunsmithing Maintenance";
 
@@ -22,9 +43,26 @@ export default function GunsmithingMaintenance() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userUuid, setUserUuid] = useState<string | null>(null);
-  const [currentListId, setCurrentListId] = useState<string | null>(null);
-  const [originalList, setOriginalList] = useState<FirearmsMaintenanceData[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDailyChecklistSubmitted, setIsDailyChecklistSubmitted] =
+    useState(false);
+  const [selectedTab, setSelectedTab] = useState("dailyChecklist");
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [persistedListId, setPersistedListId] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
+  const [newFirearm, setNewFirearm] = useState({
+    firearm_type: "handgun",
+    firearm_name: "",
+    last_maintenance_date: new Date().toISOString(),
+    maintenance_frequency: 30,
+    maintenance_notes: "",
+    status: "New",
+    assigned_to: null,
+  });
+
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageSize = 30; // Set a fixed page size
 
   const fetchUserRoleAndUuid = useCallback(async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -61,307 +99,498 @@ export default function GunsmithingMaintenance() {
     fetchUserRoleAndUuid();
   }, [fetchUserRoleAndUuid]);
 
-  const generateNewMaintenanceList = async () => {
-    const { data: firearms, error } = await supabase
+  const fetchFirearmsMaintenanceData = useCallback(async (role: string) => {
+    const { data, error } = await supabase
       .from("firearms_maintenance")
-      .select("*")
-      .order("last_maintenance_date", { ascending: true });
+      .select("*");
 
     if (error) {
-      console.error("Error fetching firearms:", error);
-      return null;
+      console.error("Error fetching initial data:", error.message);
+      throw new Error(error.message);
     }
 
-    const handguns = firearms
-      .filter((f) => f.firearm_type === "handgun")
-      .slice(0, 13);
-    const longGuns = firearms
-      .filter((f) => f.firearm_type === "long gun")
-      .slice(0, 13);
-    return [...handguns, ...longGuns];
-  };
+    // Clear the status field for each firearm
+    // const updatedData = data.map((item: FirearmsMaintenanceData) => ({
+    //   ...item,
+    //   status: "", // Clear the status
+    // }));
 
-  const fetchOrCreateCurrentList = useCallback(async () => {
-    if (!userUuid) return;
-  
+    if (role === "gunsmith") {
+      // Separate handguns and long guns
+      const handguns = data.filter(
+        (item: FirearmsMaintenanceData) => item.firearm_type === "handgun"
+      );
+      const longGuns = data.filter(
+        (item: FirearmsMaintenanceData) => item.firearm_type === "long gun"
+      );
+
+      // Cycle through the lists to get 13 of each
+      const cycledHandguns = cycleFirearms(handguns, 13);
+      const cycledLongGuns = cycleFirearms(longGuns, 13);
+
+      return [...cycledHandguns, ...cycledLongGuns];
+    }
+
+    // For admin and super admin, return full data
+    return data;
+  }, []);
+
+  const fetchPersistedData = useCallback(async (userUuid: string) => {
     try {
-      const { data: existingList, error: fetchError } = await supabase
-        .from("maintenance_lists")
-        .select("*")
-        .eq("user_uuid", userUuid)
-        .eq("is_completed", false)
+      const { data, error } = await supabase
+        .from("persisted_firearms_list")
+        .select("id, firearms_list")
+        // .eq("user_uuid", userUuid)
         .single();
-  
-      if (fetchError && fetchError.code !== "PGRST116") {
-        throw fetchError;
-      }
-  
-      if (existingList) {
-        setData(existingList.firearms);
-        setCurrentListId(existingList.id);
-      } else {
-        const newList = await generateNewMaintenanceList();
-        if (newList) {
-          const { data: insertedList, error: insertError } = await supabase
-            .from("maintenance_lists")
-            .insert({
-              user_uuid: userUuid,
-              firearms: newList,
-              is_completed: false,
-            })
-            .select()
-            .single();
-  
-          if (insertError) throw insertError;
-  
-          setData(newList);
-          setCurrentListId(insertedList.id);
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          // console.log("No persisted data found for user");
+          return null;
         }
+        throw error;
       }
+
+      return data;
     } catch (error) {
-      console.error("Error fetching or creating current list:", error);
-      toast.error("Failed to load the maintenance list");
-    } finally {
-      setLoading(false);
+      console.error("Error fetching persisted data:", error);
+      throw error;
     }
-  }, [userUuid]);
+  }, []);
+
+  const persistData = useCallback(
+    async (firearmsList: FirearmsMaintenanceData[]) => {
+      if (!userUuid) {
+        console.error("Cannot persist data: user_uuid is null or undefined");
+        toast.error("Failed to save data. User ID is missing.");
+        return;
+      }
+
+      const persistedData = {
+        firearms_list: firearmsList,
+        user_uuid: userUuid, // Add this line
+      };
+
+      try {
+        if (persistedListId) {
+          const { error } = await supabase
+            .from("persisted_firearms_list")
+            .update(persistedData)
+            .eq("id", persistedListId);
+
+          if (error) throw error;
+        } else {
+          const { data, error } = await supabase
+            .from("persisted_firearms_list")
+            .insert([persistedData])
+            .select();
+
+          if (error) throw error;
+
+          if (data && data.length > 0) {
+            setPersistedListId(data[0].id);
+          }
+        }
+
+        // toast.success("Data saved successfully.");
+      } catch (error) {
+        console.error("Error persisting data:", error);
+        toast.error("Failed to save data. Please try again.");
+      }
+    },
+    [persistedListId, userUuid] // Add userUuid to the dependency array
+  );
+
+  const fetchData = useCallback(
+    async (retryCount = 0) => {
+      setLoading(true);
+      try {
+        if (!userRole) {
+          // console.log("User role not available, waiting...");
+          return;
+        }
+
+        if (userRole === "gunsmith" && userUuid) {
+          const persistedData = await fetchPersistedData(userUuid || "");
+          if (persistedData) {
+            // console.log("Found persisted data:", persistedData);
+            if (Array.isArray(persistedData.firearms_list)) {
+              setData(persistedData.firearms_list as FirearmsMaintenanceData[]);
+              setPersistedListId(persistedData.id);
+            } else {
+              console.error("Persisted firearms_list is not an array");
+              throw new Error("Invalid persisted data format");
+            }
+          } else {
+            // console.log("No persisted data found, fetching new data");
+            const fetchedData = await fetchFirearmsMaintenanceData(userRole);
+            setData(fetchedData);
+            await persistData(fetchedData);
+          }
+        } else {
+          // For admin and super admin, always fetch fresh data
+          const fetchedData = await fetchFirearmsMaintenanceData(userRole);
+          setData(fetchedData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        if (
+          error instanceof Error &&
+          error.message.includes("statement timeout") &&
+          retryCount < 3
+        ) {
+          // console.log(`Retrying fetch (attempt ${retryCount + 1})...`);
+          setTimeout(() => fetchData(retryCount + 1), 1000 * (retryCount + 1));
+        } else {
+          toast.error("Failed to load data. Please try again later.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchFirearmsMaintenanceData, fetchPersistedData, persistData, userRole]
+  );
 
   useEffect(() => {
-    if (userUuid) {
-      fetchOrCreateCurrentList();
+    if (userRole) {
+      fetchData();
     }
-  }, [fetchOrCreateCurrentList, userUuid]);
+  }, [fetchData, userRole]);
 
-  const persistCurrentList = useCallback(
-    async (firearms: FirearmsMaintenanceData[]) => {
-      if (!currentListId) return;
-  
-      try {
-        const { error } = await supabase
-          .from("maintenance_lists")
-          .update({ firearms: firearms })
-          .eq("id", currentListId);
-  
-        if (error) throw error;
-      } catch (error) {
-        console.error("Error persisting current list:", error);
-        toast.error("Failed to save changes to the current list");
-      }
-    },
-    [currentListId]
-  );
+  useEffect(() => {
+    // Check if the checklist has been submitted today
+    const lastSubmissionDate = localStorage.getItem(
+      "lastDailyChecklistSubmission"
+    );
+    const today = new Date().toDateString();
 
-  const handleStatusChange = useCallback(
-    async (id: number, status: string | null) => {
-      try {
-        // Update local state
-        const updatedData = data.map((item) =>
-          item.id === id ? { ...item, status: status || "" } : item
-        );
-        setData(updatedData);
-  
-        // Update firearms_maintenance table
-        const { error: updateError } = await supabase
-          .from("firearms_maintenance")
-          .update({ status: status || "" })
-          .eq("id", id);
-  
-        if (updateError) throw updateError;
-  
-        // Update maintenance_lists table
-        await persistCurrentList(updatedData);
-  
-        toast.success("Status updated successfully");
-      } catch (error) {
-        console.error("Error updating status:", error);
-        toast.error("Failed to update status");
+    if (lastSubmissionDate === today) {
+      setIsDailyChecklistSubmitted(true);
+    } else {
+      setIsDailyChecklistSubmitted(false);
+    }
+  }, []);
+
+  const handleDailyChecklistSubmit = useCallback(() => {
+    setIsDailyChecklistSubmitted(true);
+  }, []);
+
+  const handleTabChange = (value: string) => {
+    if (!isDailyChecklistSubmitted && value !== "dailyChecklist") {
+      setIsAlertOpen(true);
+    } else {
+      setSelectedTab(value);
+    }
+  };
+
+  const handleStatusChange = async (id: number, status: string | null) => {
+    try {
+      const updatedData = data.map((item) =>
+        item.id === id
+          ? { ...item, status: status !== null ? status : "" }
+          : item
+      );
+      const { error } = await supabase
+        .from("firearms_maintenance")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) {
+        throw error;
       }
-    },
-    [data, persistCurrentList]
-  );
-  
-  const handleNotesChange = useCallback(
-    async (id: number, notes: string) => {
-      const now = new Date();
-      const currentDate = format(now, "yyyy-MM-dd'T'HH:mm:ss'Z'");
-  
-      try {
-        // Update local state
-        const updatedData = data.map((item) =>
+
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === id
+            ? { ...item, status: status !== null ? status : "" }
+            : item
+        )
+      );
+      setData(updatedData);
+      await persistData(updatedData);
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
+  const handleNotesChange = async (id: number, notes: string) => {
+    try {
+      const updatedData = data.map((item) =>
+        item.id === id
+          ? { ...item, status: status !== null ? status : "" }
+          : item
+      );
+      const { error } = await supabase
+        .from("firearms_maintenance")
+        .update({
+          maintenance_notes: notes,
+          last_maintenance_date: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+
+      setData((prevData) =>
+        prevData.map((item) =>
           item.id === id
             ? {
                 ...item,
                 maintenance_notes: notes,
-                last_maintenance_date: currentDate,
+                last_maintenance_date: new Date().toISOString(),
               }
             : item
-        );
-        setData(updatedData);
-  
-        // Update firearms_maintenance table
-        const { error: updateError } = await supabase
-          .from("firearms_maintenance")
-          .update({
-            maintenance_notes: notes,
-            last_maintenance_date: currentDate,
-          })
-          .eq("id", id);
-  
-        if (updateError) throw updateError;
-  
-        // Update maintenance_lists table
-        await persistCurrentList(updatedData);
-  
-        toast.success("Notes updated successfully");
-      } catch (error) {
-        console.error("Error updating notes:", error);
-        toast.error("Failed to update notes");
-      }
-    },
-    [data, persistCurrentList]
-  );
-
-  const handleUpdateFrequency = useCallback(
-    async (id: number, frequency: number) => {
-      try {
-        // Update local state
-        setData((prevData) => {
-          const updatedData = prevData.map((item) =>
-            item.id === id ? { ...item, maintenance_frequency: frequency } : item
-          );
-          return updatedData;
-        });
-  
-        // Update maintenance_lists table
-        await persistCurrentList(data);
-  
-        // Update firearms_maintenance table
-        const { error } = await supabase
-          .from("firearms_maintenance")
-          .update({ maintenance_frequency: frequency })
-          .eq("id", id);
-  
-        if (error) throw error;
-  
-        toast.success("Frequency updated successfully");
-      } catch (error) {
-        console.error("Error updating frequency:", error);
-        toast.error("Failed to update frequency");
-      }
-    },
-    [data, persistCurrentList]
-  );
-
-  const handleDeleteFirearm = useCallback(
-    async (id: number) => {
-      try {
-        const { error } = await supabase
-          .from("firearms_maintenance")
-          .delete()
-          .eq("id", id);
-
-        if (error) throw error;
-
-        setData((prevData) => {
-          const updatedData = prevData.filter((item) => item.id !== id);
-          persistCurrentList(updatedData);
-          return updatedData;
-        });
-
-        toast.success("Firearm deleted successfully");
-      } catch (error) {
-        console.error("Error deleting firearm:", error);
-        toast.error("Failed to delete firearm");
-      }
-    },
-    [persistCurrentList]
-  );
-
-  const regenerateFirearmsList = useCallback(async () => {
-    try {
-      const newList = await generateNewMaintenanceList();
-      if (newList) {
-        setData(newList);
-        await supabase
-          .from("maintenance_lists")
-          .update({ firearms: newList })
-          .eq("id", currentListId);
-        toast.success("Firearms list regenerated successfully!");
-      }
+        )
+      );
+      setData(updatedData);
+      await persistData(updatedData);
     } catch (error) {
-      console.error("Failed to regenerate firearms list:", error);
-      toast.error("Failed to regenerate firearms list.");
+      console.error("Error updating maintenance notes:", error);
     }
-  }, [currentListId]);
+  };
 
-  const handleSubmit = useCallback(async () => {
+  const handleUpdateFrequency = async (id: number, frequency: number) => {
+    setData((prevData) =>
+      prevData.map((item) =>
+        item.id === id ? { ...item, maintenance_frequency: frequency } : item
+      )
+    );
+    await persistData(data);
+  };
+
+  const handleAddFirearm = async () => {
+    try {
+      const { data: newFirearmData, error } = await supabase
+        .from("firearms_maintenance")
+        .insert([newFirearm])
+        .select("*");
+
+      if (error) {
+        throw error;
+      }
+
+      if (newFirearmData && newFirearmData.length > 0) {
+        setData((prevData) => {
+          const updatedData = [...prevData, newFirearmData[0]];
+          persistData(updatedData);
+
+          // Calculate the new page index based on the total number of items
+          const newPageIndex = Math.floor(updatedData.length / pageSize);
+
+          // Update the pagination state
+          setPageIndex(newPageIndex);
+
+          return updatedData;
+        });
+      } else {
+        throw new Error("No data returned from insert operation");
+      }
+
+      // Close the dialog after adding the firearm
+      setIsDialogOpen(false);
+      setNewFirearm({
+        firearm_type: "handgun",
+        firearm_name: "",
+        last_maintenance_date: new Date().toISOString(),
+        maintenance_frequency: 30,
+        maintenance_notes: "",
+        status: "New",
+        assigned_to: null,
+      });
+    } catch (error) {
+      console.error("Error adding firearm:", error);
+    }
+  };
+
+  const handleFirearmInputChange = (e: {
+    target: { name: any; value: any };
+  }) => {
+    const { name, value } = e.target;
+    setNewFirearm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleDeleteFirearm = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from("firearms_maintenance")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+
+      const updatedData = data.filter((item) => item.id !== id);
+      setData(updatedData);
+      await persistData(updatedData);
+    } catch (error) {
+      console.error("Error deleting firearm:", error);
+    }
+  };
+
+  useEffect(() => {
+    const FirearmsMaintenanceTableSubscription = supabase
+      .channel("custom-all-firearms-maintenance-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "firearms_maintenance" },
+        (payload) => {
+          setData((prevData) => {
+            let updatedData = [...prevData];
+
+            if (payload.eventType === "INSERT") {
+              const exists = prevData.some(
+                (item) => item.id === payload.new.id
+              );
+              if (!exists) {
+                updatedData = [
+                  payload.new as FirearmsMaintenanceData,
+                  ...prevData,
+                ];
+              }
+            } else if (payload.eventType === "UPDATE") {
+              updatedData = prevData.map((item) =>
+                item.id === payload.new.id
+                  ? (payload.new as FirearmsMaintenanceData)
+                  : item
+              );
+            } else if (payload.eventType === "DELETE") {
+              updatedData = prevData.filter(
+                (item) => item.id !== payload.old.id
+              );
+            }
+
+            persistData(updatedData);
+            return updatedData;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(FirearmsMaintenanceTableSubscription);
+    };
+  }, [persistData, userUuid]);
+
+  const handleSubmit = async () => {
+    // Check if all firearms have notes and status
     const incompleteFirearms = data.filter(
       (firearm) => !firearm.maintenance_notes || !firearm.status
     );
-  
+
     if (incompleteFirearms.length > 0) {
       toast.error(
         "Please ensure all firearms have detailed notes and a status before submitting."
       );
       return;
     }
-  
+
     try {
-      // Update the firearms_maintenance table
       for (const firearm of data) {
-        const { error } = await supabase
+        await supabase
           .from("firearms_maintenance")
           .update({
             maintenance_notes: firearm.maintenance_notes,
             status: firearm.status,
-            last_maintenance_date: firearm.last_maintenance_date,
+            last_maintenance_date: new Date().toISOString(),
           })
           .eq("id", firearm.id);
-  
-        if (error) throw error;
       }
-  
-      // Mark the current list as completed
-      await supabase
-        .from("maintenance_lists")
-        .update({ is_completed: true })
-        .eq("id", currentListId);
-  
-      // Generate a new list
-      const newList = await generateNewMaintenanceList();
-      if (newList) {
-        const { data: insertedList, error: insertError } = await supabase
-          .from("maintenance_lists")
-          .insert({
-            user_uuid: userUuid,
-            firearms: newList,
-            is_completed: false,
-          })
-          .select()
-          .single();
-  
-        if (insertError) throw insertError;
-  
-        setOriginalList(newList);
-        setData(newList);
-        setCurrentListId(insertedList.id);
+
+      // Clear persisted list after submission
+      if (persistedListId) {
+        await supabase
+          .from("persisted_firearms_list")
+          .delete()
+          .eq("id", persistedListId);
+        setPersistedListId(null);
       }
-  
+
+      const newFirearmsList = await fetchFirearmsMaintenanceData(
+        userRole || ""
+      );
+      const resetFirearmsList = newFirearmsList.map((firearm) => ({
+        ...firearm,
+        status: "",
+        maintenance_notes: "",
+      }));
+
+      setData(resetFirearmsList);
+      await persistData(resetFirearmsList);
+
       toast.success("Maintenance list submitted successfully!");
     } catch (error) {
       console.error("Failed to submit maintenance list:", error);
       toast.error("Failed to submit maintenance list.");
     }
-  }, [data, currentListId, userUuid]);
+  };
+
+  const regenerateFirearmsList = async () => {
+    try {
+      const response = await fetch("/api/firearms-maintenance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "generateNewList", data: { userUuid } }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to regenerate firearms list");
+      }
+
+      const { firearms } = await response.json();
+      setData(firearms);
+
+      // Clear the persisted list and save the new one
+      await supabase
+        .from("persisted_firearms_list")
+        .delete()
+        .eq("user_uuid", userUuid);
+      await persistData(firearms);
+
+      toast.success("Firearms list regenerated successfully!");
+    } catch (error) {
+      console.error("Failed to regenerate firearms list:", error);
+      toast.error("Failed to regenerate firearms list.");
+    }
+  };
 
   return (
     <RoleBasedWrapper allowedRoles={["gunsmith", "admin", "super admin"]}>
       <Toaster position="top-right" />
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Daily Checklist Not Submitted</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please submit the daily checklist before starting maintenance.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setIsAlertOpen(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex flex-col h-screen my-8">
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Tabs defaultValue="maintenance" className="flex-1 flex flex-col">
+          <Tabs
+            defaultValue="dailyChecklist"
+            className="flex-1 flex flex-col"
+            value={selectedTab}
+            onValueChange={handleTabChange}
+          >
             <div className="container justify-start px-4 mt-4">
               <TabsList>
+                <TabsTrigger value="dailyChecklist">
+                  Daily Checklist
+                </TabsTrigger>
                 <TabsTrigger value="maintenance">
                   Weekly Maintenance
                 </TabsTrigger>
@@ -377,6 +606,24 @@ export default function GunsmithingMaintenance() {
             >
               <ScrollArea className="h-[calc(100vh-300px)] overflow-auto">
                 <div className="container px-4 mt-4">
+                  <TabsContent value="dailyChecklist" className="mt-0">
+                    <Card className="h-full">
+                      <CardHeader>
+                        <CardTitle className="text-2xl font-bold">
+                          <TextGenerateEffect words="Daily Checklist" />
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <DailyChecklist
+                          userRole={userRole}
+                          userUuid={userUuid}
+                          userName={userName}
+                          onSubmit={handleDailyChecklistSubmit}
+                        />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="maintenance" className="mt-0">
                     <Card className="h-full">
                       <CardHeader>
@@ -386,6 +633,16 @@ export default function GunsmithingMaintenance() {
                       </CardHeader>
                       <CardContent className="p-0">
                         <div className="flex items-center justify-between p-4">
+                          {["admin", "super admin"].includes(
+                            userRole || ""
+                          ) && (
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsDialogOpen(true)}
+                            >
+                              Add Firearm
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             onClick={regenerateFirearmsList}
@@ -408,11 +665,18 @@ export default function GunsmithingMaintenance() {
                                 onNotesChange={handleNotesChange}
                                 onUpdateFrequency={handleUpdateFrequency}
                                 onDeleteFirearm={handleDeleteFirearm}
-                                pageIndex={0}
-                                setPageIndex={() => {}}
                               />
                             )
                           )}
+                        </div>
+                        <div className="container justify-start p-4 mt-4">
+                          <Button
+                            variant="ringHover"
+                            onClick={handleSubmit}
+                            className="w-full max-w-lg"
+                          >
+                            Submit Maintenance List
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -436,15 +700,6 @@ export default function GunsmithingMaintenance() {
                 <ScrollBar orientation="vertical" />
                 <ScrollBar orientation="horizontal" />
               </ScrollArea>
-              <div className="container justify-start p-2">
-                <Button
-                  variant="ringHover"
-                  onClick={handleSubmit}
-                  className="max-w-lg"
-                >
-                  Submit Maintenance List
-                </Button>
-              </div>
             </div>
           </Tabs>
         </div>

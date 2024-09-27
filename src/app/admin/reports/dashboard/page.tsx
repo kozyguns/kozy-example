@@ -55,6 +55,7 @@ import { Progress } from "@/components/ui/progress";
 import { useRole } from "@/context/RoleContext";
 import { Textarea } from "@/components/ui/textarea";
 import RoleBasedWrapper from "@/components/RoleBasedWrapper";
+import DailyChecklist from "@/app/team/gunsmithing/DailyChecklist"; 
 
 interface Certificate {
   id: number;
@@ -142,6 +143,11 @@ export default function AdminDashboard() {
       end: endOfYesterday,
     };
   });
+  const [dailyChecklistStatus, setDailyChecklistStatus] = useState({
+    submitted: false,
+    lastSubmissionDate: null,
+    firearmsCount: 0,
+  });
 
   const categoryMap = new Map<number, string>([
     [3, "Firearm Accessories"],
@@ -194,6 +200,7 @@ export default function AdminDashboard() {
         (payload) => {
           // console.log("Firearms maintenance change received!", payload);
           fetchLatestGunsmithMaintenance();
+          fetchDailyChecklistStatus();
         }
       )
       .on(
@@ -244,6 +251,7 @@ export default function AdminDashboard() {
       fetchLatestChecklistSubmission();
       fetchLatestRangeWalkReport();
       fetchCertificates();
+      fetchDailyChecklistStatus();
 
       const result = await fetchLatestSalesData(
         selectedRange.start,
@@ -272,6 +280,37 @@ export default function AdminDashboard() {
       channel.unsubscribe();
     };
   }, []);
+
+  const fetchDailyChecklistStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("firearms_maintenance")
+        .select("id, last_maintenance_date")
+        .eq("rental_notes", "With Gunsmith");
+
+      if (error) throw error;
+
+      const firearmsCount = data.length;
+      const lastSubmission = data.reduce((latest, current) => {
+        return latest && latest > current.last_maintenance_date
+          ? latest
+          : current.last_maintenance_date;
+      }, null);
+
+      const submitted = lastSubmission
+        ? new Date(lastSubmission) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+        : false;
+
+      setDailyChecklistStatus({
+        submitted,
+        lastSubmissionDate: lastSubmission,
+        firearmsCount,
+      });
+    } catch (error) {
+      console.error("Error fetching daily checklist status:", error);
+    }
+  };
+
 
   async function fetchLatestDailyDeposit() {
     const { data, error } = await supabase
@@ -784,6 +823,13 @@ export default function AdminDashboard() {
                 type="maintenance"
               />
               <ReportCard
+                title="Firearms With Gunsmith"
+                date={dailyChecklistStatus.lastSubmissionDate}
+                icon={<ClipboardIcon className="h-6 w-6" />}
+                extraInfo={`${dailyChecklistStatus.firearmsCount} firearms with gunsmith`}
+                type="dailyChecklist"
+              />
+              <ReportCard
                 title="Daily Checklist Submissions"
                 date={checklist?.submission_date || null}
                 icon={<ClipboardIcon className="h-6 w-6" />}
@@ -824,9 +870,10 @@ export default function AdminDashboard() {
                 type="certificate"
                 details={certificates}
               />
+              
 
               {/* Certificate Renewals List*/}
-              <Card className="flex flex-col overflow-hidden">
+              {/* <Card className="flex flex-col overflow-hidden">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <DrawingPinIcon className="h-6 w-6" />
@@ -834,7 +881,7 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <div className="flex-grow overflow-hidden">
-                  {/* <ScrollArea className="h-[calc(100vh-1000px)] overflow-auto"> */}
+
                   <CardContent className="flex-grow ">
                     {certificates.length > 0 ? (
                       <ul className="space-y-1">
@@ -864,11 +911,8 @@ export default function AdminDashboard() {
                       </p>
                     )}
                   </CardContent>
-                  {/* <ScrollBar orientation="vertical" /> */}
-                  {/* <ScrollBar orientation="horizontal" /> */}
-                  {/* </ScrollArea> */}
                 </div>
-              </Card>
+              </Card> */}
             </div>
             {/* </CardContent>
           </Card> */}
@@ -1295,6 +1339,8 @@ function ReportCard({
       return submissionDate >= sevenDaysAgo;
     } else if (type === "certificate") {
       return false; // Always show as not submitted for certificates
+    } else if (type === "dailyChecklist") {
+      return submissionDate >= oneDayAgo;
     } else {
       return submissionDate >= oneDayAgo;
     }
@@ -1302,11 +1348,9 @@ function ReportCard({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {icon}
-          {title}
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {icon}
       </CardHeader>
       <CardContent>
         {date ? (
@@ -1314,6 +1358,8 @@ function ReportCard({
             <p className="text-sm text-gray-500">
               {type === "certificate"
                 ? "Oldest expiration:"
+                : type === "dailyChecklist"
+                ? "Last updated:"
                 : "Last submitted:"}
             </p>
             <p className="font-semibold">{formatLocalDate(date)}</p>
@@ -1325,6 +1371,8 @@ function ReportCard({
                   ? "Employee:"
                   : type === "certificate"
                   ? "Total:"
+                  : type === "dailyChecklist"
+                  ? "Firearms down for service:"
                   : "By:"}{" "}
                 {extraInfo}
               </p>

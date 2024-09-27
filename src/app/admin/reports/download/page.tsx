@@ -9,6 +9,7 @@ import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 import { Button } from "@/components/ui/button";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
+import { format } from "date-fns";
 
 interface SickTimeReport {
   employee_id: number;
@@ -21,20 +22,33 @@ interface SickTimeReport {
 interface TimesheetReport {
   id: number;
   employee_id: number;
-  name: string | null; // This should match the `TEXT` type
+  name: string;
   event_date: string | null;
   start_time: string;
-  end_time: string;
-  lunch_start: string | null; // Add lunch_start
-  lunch_end: string | null; // Add lunch_end
-  total_hours: string | null;
+  end_time: string | null;
+  lunch_start: string | null;
+  lunch_end: string | null;
+  stored_total_hours: string | null;
+  calculated_total_hours: string | null;
+  scheduled_hours: number;
+  sick_time_usage: number;
+  vacation_time_usage: number;
+  regular_time: number;
+  overtime: number;
+  available_sick_time: number;
+  hoursToReconcile?: number;
+  total_hours_with_sick?: number;
 }
 
 const AdminReportsPage = () => {
   const [sickTimeData, setSickTimeData] = useState<SickTimeReport[]>([]);
   const [timesheetData, setTimesheetData] = useState<TimesheetReport[]>([]);
-  const [activeTab, setActiveTab] = useState("sick-time");
+  const [activeTab, setActiveTab] = useState("timesheet");
   const [isAllExpanded, setIsAllExpanded] = useState(false);
+  const [selectedPayPeriod, setSelectedPayPeriod] = useState<string | null>(null);
+  const [filteredTimesheetData, setFilteredTimesheetData] = useState<
+    TimesheetReport[]
+  >([]);
 
   useEffect(() => {
     const fetchSickTimeData = async () => {
@@ -63,6 +77,20 @@ const AdminReportsPage = () => {
     fetchTimesheetData();
   }, []);
 
+  const handleTimesheetDataUpdate = (
+    updater: (prevData: TimesheetReport[]) => TimesheetReport[]
+  ) => {
+    setTimesheetData((prevData) => {
+      const newData = updater(prevData);
+      console.log("Updated timesheet data:", newData);
+      return newData;
+    });
+  };
+
+  const handleFilteredDataUpdate = (filteredData: TimesheetReport[]) => {
+    setFilteredTimesheetData(filteredData);
+  };
+
   const handleDownload = () => {
     let dataToExport: any[] = [];
     let fileName = "";
@@ -76,15 +104,26 @@ const AdminReportsPage = () => {
       }));
       fileName = "sick_time_report.xlsx";
     } else if (activeTab === "timesheet") {
-      dataToExport = timesheetData.map((row) => ({
+      dataToExport = filteredTimesheetData.map((row) => ({
         Employee: row.name,
-        Date: row.event_date,
+        Date: row.event_date
+          ? format(new Date(row.event_date), "M-dd-yyyy")
+          : "N/A",
         "Start Time": row.start_time,
         "End Time": row.end_time,
-        "Total Hours": row.total_hours,
+        "Total Hours Logged": row.calculated_total_hours || "N/A",
+        "Scheduled Hours": row.scheduled_hours?.toFixed(2),
+        "Sick Time Usage": row.sick_time_usage?.toFixed(2) || "N/A",
+        "Vacation Time Usage": row.vacation_time_usage?.toFixed(2) || "N/A",
+        "Regular Time": row.regular_time.toFixed(2),
+        Overtime: row.overtime.toFixed(2),
+        "Available Sick Time": row.available_sick_time?.toFixed(2) || "N/A",
+        "Total Hours With Sick": row.total_hours_with_sick?.toFixed(2) || "N/A",
       }));
       fileName = "timesheet_report.xlsx";
     }
+
+
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
@@ -93,6 +132,10 @@ const AdminReportsPage = () => {
 
     saveAs(new Blob([wbout], { type: "application/octet-stream" }), fileName);
   };
+
+  useEffect(() => {
+    console.log("Filtered Timesheet Data:", filteredTimesheetData);
+  }, [filteredTimesheetData]);
 
   const handleExpandCollapseAll = () => {
     setIsAllExpanded(!isAllExpanded);
@@ -116,8 +159,8 @@ const AdminReportsPage = () => {
           onValueChange={setActiveTab}
         >
           <TabsList>
-            <TabsTrigger value="sick-time">Sick Time Report</TabsTrigger>
             <TabsTrigger value="timesheet">Timesheet Report</TabsTrigger>
+            <TabsTrigger value="sick-time">Sick Time Report</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sick-time">
@@ -139,7 +182,12 @@ const AdminReportsPage = () => {
           <TabsContent value="timesheet">
             <Card>
               {timesheetData.length > 0 ? (
-                <TimesheetTable data={timesheetData} />
+                <TimesheetTable
+                  data={timesheetData}
+                  onDataUpdate={handleTimesheetDataUpdate}
+                  onFilteredDataUpdate={handleFilteredDataUpdate}
+                  selectedPayPeriod={selectedPayPeriod}
+                />
               ) : (
                 <p>No timesheet data available.</p>
               )}

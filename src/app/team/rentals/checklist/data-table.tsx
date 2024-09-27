@@ -109,7 +109,7 @@ export function DataTable<TData extends FirearmsMaintenanceData, TValue>({
     <div className="flex flex-col h-full w-full max-h-[80vh]">
       <div className="flex flex-row items-center justify-between mx-2 my-2">
         <div className="flex flex-row items-center gap-2">
-        <div className="relative">
+          <div className="relative">
             <Input
               placeholder="Filter By Firearm Name..."
               value={searchValue}

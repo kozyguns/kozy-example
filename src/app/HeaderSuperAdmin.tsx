@@ -1,4 +1,3 @@
-// super admin header
 "use client";
 
 import * as React from "react";
@@ -28,9 +27,9 @@ import {
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/utils/supabase/client";
-import useUnreadMessages from "@/pages/api/fetch-unread";
-import useUnreadOrders from "@/pages/api/useUnreadOrders";
-import useUnreadTimeOffRequests from "@/pages/api/useUnreadTimeOffRequests";
+// import useUnreadMessages from "@/app/api/fetch-unread/route";
+// import useUnreadOrders from "@/app/api/useUnreadOrders";
+// import useUnreadTimeOffRequests from "@/app/api/useUnreadTimeOffRequests/route";
 import RoleBasedWrapper from "@/components/RoleBasedWrapper";
 import { useRouter } from "next/navigation";
 import {
@@ -78,9 +77,9 @@ const auditComponents = [
 
 const schedComponents = [
   {
-    title: "Calendar",
+    title: "Team Calendar",
     href: "/team/crew/calendar",
-    description: "Where Dey At",
+    description: "View Team Schedules",
   },
   {
     title: "Submit Time Off",
@@ -201,29 +200,6 @@ const reportsComps = [
   },
 ];
 
-const docsComps = [
-  {
-    title: "Help Docs",
-    href: "/help",
-    description: "Help Docs",
-  },
-  // {
-  //   title: "System Docs",
-  //   href: "/docs",
-  //   description: "Guide Docs",
-  // },
-  {
-    title: "System Support Docs",
-    href: "/docs",
-    description: "Comprehensive Guide Docs",
-  },
-  {
-    title: "Features Page",
-    href: "/public/features",
-    description: "Overview Of Features",
-  },
-];
-
 const manageComps = [
   {
     title: "Staff Profiles",
@@ -266,14 +242,24 @@ const manageComps = [
     description: "Uploadthing",
   },
   {
-    title: "View Classes",
-    href: "/public/classes",
-    description: "View & Add Classes",
+    title: "Reports Dashboard",
+    href: "/admin/reports/dashboard",
+    description: "Daily Dashboard",
   },
   {
     title: "Onboarding",
     href: "/admin/onboarding",
     description: "Trial Onboarding",
+  },
+  {
+    title: "Products & Pricing",
+    href: "/pricing",
+    description: "All Products & Subscriptions",
+  },
+  {
+    title: "Classes Schedule",
+    href: "/public/classes",
+    description: "Class Scheduling Page",
   },
 ];
 
@@ -314,14 +300,14 @@ const comboComps = [
     description: "Report All Submitted Points",
   },
   {
-    title: "Submit An Inquiry",
-    href: "/team/support/inquiries",
-    description: "Submit Support Inquiries",
+    title: "Submit Special Orders",
+    href: "/sales/orders",
+    description: "Submit Requests For Customers",
   },
   {
-    title: "Inquiries Review",
-    href: "/team/support/inquiries/review",
-    description: "View & Update Inquiries",
+    title: "Special Orders Report",
+    href: "/sales/orderreview",
+    description: "View Submitted Orders",
   },
   {
     title: "Gunsmithing",
@@ -333,16 +319,6 @@ const comboComps = [
     href: "/team/rentals/checklist",
     description: "Rental Inventory Check",
   },
-  {
-    title: "Products Test Page",
-    href: "/pricing",
-    description: "Trial Products Page",
-  },
-  {
-    title: "Classes Test Page",
-    href: "/public/classes",
-    description: "Class Scheduling Page",
-  },
 ];
 
 const HeaderSuperAdmin = React.memo(() => {
@@ -350,11 +326,31 @@ const HeaderSuperAdmin = React.memo(() => {
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const router = useRouter();
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
-  const unreadOrderCount = useUnreadOrders(); // Use the hook to get unread orders
-  const unreadTimeOffCount = useUnreadTimeOffRequests(); // Use the hook to get unread time-off requests
   const { setTheme } = useTheme();
   const { resetUnreadCounts } = useUnreadCounts();
   const { totalUnreadCount: globalUnreadCount } = useUnreadCounts();
+  const [unreadOrderCount, setUnreadOrderCount] = useState(0);
+  const [unreadTimeOffCount, setUnreadTimeOffCount] = useState(0);
+
+  const fetchUnreadOrders = async () => {
+    try {
+      const response = await fetch("/api/useUnreadOrders");
+      const data = await response.json();
+      setUnreadOrderCount(data.unreadOrderCount);
+    } catch (error) {
+      console.error("Error fetching unread orders:", error);
+    }
+  };
+
+  const fetchUnreadTimeOffRequests = async () => {
+    try {
+      const response = await fetch("/api/useUnreadTimeOffRequests");
+      const data = await response.json();
+      setUnreadTimeOffCount(data.unreadTimeOffCount);
+    } catch (error) {
+      console.error("Error fetching unread time-off requests:", error);
+    }
+  };
 
   const fetchUserAndEmployee = useCallback(async () => {
     const { data: userData } = await supabase.auth.getUser();
@@ -464,6 +460,8 @@ const HeaderSuperAdmin = React.memo(() => {
   useEffect(() => {
     if (user) {
       fetchUnreadCounts();
+      fetchUnreadOrders();
+      fetchUnreadTimeOffRequests();
 
       const groupChatMessageSubscription = supabase
         .channel("group_chat_messages")
@@ -494,7 +492,27 @@ const HeaderSuperAdmin = React.memo(() => {
         )
         .subscribe();
 
+      const ordersSubscription = supabase
+        .channel("orders")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "orders" },
+          fetchUnreadOrders
+        )
+        .subscribe();
+
+      const timeOffSubscription = supabase
+        .channel("time_off_requests")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "time_off_requests" },
+          fetchUnreadTimeOffRequests
+        )
+        .subscribe();
+
       return () => {
+        ordersSubscription.unsubscribe();
+        timeOffSubscription.unsubscribe();
         groupChatMessageSubscription.unsubscribe();
         directMessageSubscription.unsubscribe();
       };
@@ -559,6 +577,22 @@ const HeaderSuperAdmin = React.memo(() => {
         <NavigationMenu>
           <NavigationMenuList className="flex space-x-4 mr-3">
             <NavigationMenuItem>
+              <NavigationMenuTrigger>Auditing</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                  {auditComponents.map((component) => (
+                    <ListItem
+                      key={component.title}
+                      title={component.title}
+                      href={component.href}
+                    >
+                      {component.description}
+                    </ListItem>
+                  ))}
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
               <NavigationMenuTrigger>Staff Management</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
@@ -607,10 +641,26 @@ const HeaderSuperAdmin = React.memo(() => {
               </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuTrigger>Docs</NavigationMenuTrigger>
+              <NavigationMenuTrigger>SOPs</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                  {docsComps.map((component) => (
+                  {sopComps.map((component) => (
+                    <ListItem
+                      key={component.title}
+                      title={component.title}
+                      href={component.href}
+                    >
+                      {component.description}
+                    </ListItem>
+                  ))}
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>AIM</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+                  {aimComps.map((component) => (
                     <ListItem
                       key={component.title}
                       title={component.title}
@@ -677,7 +727,6 @@ const HeaderSuperAdmin = React.memo(() => {
                     <PersonIcon className="mr-2 h-4 w-4" />
                     <span>Your Profile Page</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onSelect={() => handleLinkClick("/admin/domains")}
                   >
@@ -691,6 +740,7 @@ const HeaderSuperAdmin = React.memo(() => {
                     <span>Admin Dashboard</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={handleChatClick}>
                     <ChatBubbleIcon className="mr-2 h-4 w-4" />
                     <span>Messages</span>

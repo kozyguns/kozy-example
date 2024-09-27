@@ -151,8 +151,7 @@ export default function ApproveRequestsPage() {
           currentRequestId,
           `Custom: ${customApprovalText}` as RequestAction,
           `Your Time Off Request For ${request.start_date} - ${request.end_date} Has Been Approved!`,
-          request.use_sick_time, // Pass the use_sick_time parameter
-          request.use_vacation_time // Pass the use_vacation_time parameter
+          request.use_sick_time // Pass the use_sick_time parameter
         );
       }
       setShowCustomApprovalModal(false);
@@ -226,43 +225,50 @@ export default function ApproveRequestsPage() {
       let templateName: string;
       let templateData: any;
 
+      const formatDateWithDay = (dateString: string) => {
+        const date = parseISO(dateString);
+        return format(date, "EEEE, MMMM d, yyyy");
+      };
+
       switch (action) {
         case "time_off":
           templateName = "TimeOffApproved";
           templateData = {
             name: request.name,
-            startDate: request.start_date,
-            endDate: request.end_date,
+            startDate: formatDateWithDay(request.start_date),
+            endDate: formatDateWithDay(request.end_date),
           };
           break;
         case "deny":
           templateName = "TimeOffDenied";
           templateData = {
             name: request.name,
-            startDate: request.start_date,
-            endDate: request.end_date,
+            startDate: formatDateWithDay(request.start_date),
+            endDate: formatDateWithDay(request.end_date),
           };
           break;
         case "called_out":
           templateName = "CalledOut";
-          templateData = { name: request.name, date: request.start_date };
+          templateData = {
+            name: request.name,
+            date: formatDateWithDay(request.start_date),
+          };
           break;
         case "left_early":
           templateName = "LeftEarly";
-          templateData = { name: request.name, date: request.start_date };
-          break;
-        case "pending":
-          templateName = "Pending"; // Define a default template name for pending
-          templateData = { name: request.name }; // Add any relevant data
+          templateData = {
+            name: request.name,
+            date: formatDateWithDay(request.start_date),
+          };
           break;
         default:
           if (action.startsWith("Custom: ")) {
-            templateName = "CustomStatus"; // Or create a custom template
+            templateName = "CustomStatus";
             templateData = {
               name: request.name,
-              startDate: request.start_date,
-              endDate: request.end_date,
-              customMessage: action.slice(8), // Remove 'Custom: ' prefix
+              startDate: formatDateWithDay(request.start_date),
+              endDate: formatDateWithDay(request.end_date),
+              customMessage: action.slice(8),
             };
           } else {
             throw new Error("Invalid action");
@@ -279,24 +285,10 @@ export default function ApproveRequestsPage() {
           : action === "time_off"
           ? "Time Off Request Approved"
           : action.startsWith("Custom: ")
-          ? "Time Off Request Approval"
+          ? "Time Off Request Custom Approval"
           : "Time Off Request Status Update";
 
-      if (action !== "pending") {
-        await sendEmail(request.email, subject, templateName, templateData);
-      }
-
-      const shouldUseSickTime =
-        use_sick_time &&
-        (action === "time_off" ||
-          action === "called_out" ||
-          action.startsWith("Custom"));
-
-      const shouldUseVacationTime =
-        use_vacation_time &&
-        action === "time_off" &&
-        request.pay_type === "salary";
-
+      // Call the API to approve the request
       const response = await fetch("/api/approve_request", {
         method: "POST",
         headers: {
@@ -316,178 +308,18 @@ export default function ApproveRequestsPage() {
 
       const result = await response.json();
       // console.log("API response:", result);
-      const { employee_id, start_date, end_date, email } = result;
-      if (!email) {
-        throw new Error("Email not found in API response");
-      }
 
-      const startDate = new Date(start_date);
-      const endDate = new Date(end_date);
-      const dates = [];
-      for (
-        let d = new Date(startDate);
-        d <= endDate;
-        d.setDate(d.getDate() + 1)
-      ) {
-        dates.push(new Date(d));
-      }
+      // Send email after successful API call
+      await sendEmail(request.email, subject, templateName, templateData);
 
-      for (const date of dates) {
-        const formattedDate = date.toISOString().split("T")[0];
-        const dayOfWeek = date.getUTCDay();
-        const daysOfWeek = [
-          "Sunday",
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ];
-        const dayName = daysOfWeek[dayOfWeek];
-
-        const { data: refSchedules, error: refError } = await supabase
-          .from("reference_schedules")
-          .select("start_time, end_time")
-          .eq("employee_id", employee_id)
-          .eq("day_of_week", dayName)
-          .single();
-
-        if (refError) {
-          console.error(
-            `Error fetching reference schedule for ${dayName}:`,
-            refError
-          );
-          continue;
-        }
-
-        if (
-          !refSchedules ||
-          (refSchedules.start_time === null && refSchedules.end_time === null)
-        ) {
-          // Skip inserting or updating schedules for days the employee isn't scheduled to work
-          continue;
-        }
-
-        if (shouldUseVacationTime) {
-          const { error: deductVacationTimeError } = await supabase.rpc(
-            "deduct_vacation_time",
-            {
-              p_emp_id: employee_id,
-              p_start_date: formatTZ(startDate, "yyyy-MM-dd", { timeZone }),
-              p_end_date: formatTZ(endDate, "yyyy-MM-dd", { timeZone }),
-            }
-          );
-
-          if (deductVacationTimeError) {
-            console.error(
-              "Error deducting vacation time:",
-              deductVacationTimeError
-            );
-          }
-
-          const { error: updateVacationTimeError } = await supabase
-            .from("time_off_requests")
-            .update({
-              use_vacation_time: true,
-            })
-            .eq("request_id", request_id);
-
-          if (updateVacationTimeError) {
-            console.error(
-              `Error updating time_off_requests for use_vacation_time:`,
-              updateVacationTimeError
-            );
-          }
-        }
-
-        const { data: scheduleData, error: scheduleFetchError } = await supabase
-          .from("schedules")
-          .select("*")
-          .eq("employee_id", employee_id)
-          .eq("schedule_date", formattedDate)
-          .single();
-
-        if (scheduleFetchError && scheduleFetchError.code !== "PGRST116") {
-          console.error(
-            `Error fetching schedule for date ${formattedDate}:`,
-            scheduleFetchError
-          );
-          continue;
-        }
-
-        if (!scheduleData) {
-          const { error: scheduleInsertError } = await supabase
-            .from("schedules")
-            .insert({
-              employee_id,
-              schedule_date: formattedDate,
-              day_of_week: dayName,
-              status: action,
-            });
-
-          if (scheduleInsertError) {
-            console.error(
-              `Error inserting schedule for date ${formattedDate}:`,
-              scheduleInsertError
-            );
-          }
-        } else {
-          const { error: scheduleUpdateError } = await supabase
-            .from("schedules")
-            .update({ status: action })
-            .eq("employee_id", employee_id)
-            .eq("schedule_date", formattedDate);
-
-          if (scheduleUpdateError) {
-            console.error(
-              `Error updating schedule for date ${formattedDate}:`,
-              scheduleUpdateError
-            );
-          }
-        }
-      }
-
-      if (shouldUseSickTime) {
-        const { error: deductSickTimeError } = await supabase.rpc(
-          "deduct_sick_time",
-          {
-            p_emp_id: employee_id,
-            p_start_date: formatTZ(startDate, "yyyy-MM-dd", { timeZone }),
-            p_end_date: formatTZ(endDate, "yyyy-MM-dd", { timeZone }),
-          }
-        );
-
-        if (deductSickTimeError) {
-          console.error("Error deducting sick time:", deductSickTimeError);
-        }
-
-        const { error: updateSickTimeError } = await supabase
-          .from("time_off_requests")
-          .update({
-            use_sick_time: true,
-            sick_time_year: new Date().getFullYear(),
-          })
-          .eq("request_id", request_id);
-
-        if (updateSickTimeError) {
-          console.error(
-            `Error updating time_off_requests for use_sick_time:`,
-            updateSickTimeError
-          );
-        }
-      }
-
-      if (action !== "pending") {
-        const { error: updateError } = await supabase
-          .from("time_off_requests")
-          .update({ is_read: true })
-          .eq("request_id", request_id);
-
-        if (updateError) {
-          throw new Error(updateError.message);
-        }
-      }
+      // Update local state
+      setRequests((prevRequests) =>
+        prevRequests.map((req) =>
+          req.request_id === request_id
+            ? { ...req, status: action, use_sick_time, use_vacation_time }
+            : req
+        )
+      );
 
       // Re-fetch the updated requests after handling the action
       await fetchRequests();
