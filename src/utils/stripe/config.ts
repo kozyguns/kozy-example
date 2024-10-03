@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
-  apiVersion: '2024-06-20',
+if (!process.env.STRIPE_SECRET_KEY!) {
+  throw new Error('STRIPE_SECRET_KEY is not set in the environment variables');
+}
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2024-06-20', // Use the latest available version
   appInfo: {
     name: 'AHR Project',
     version: '0.1.0'
