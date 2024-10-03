@@ -341,7 +341,7 @@ export default function Component() {
                     <h3 className="text-lg font-bold">
                       {event.title || "No title available"}
                     </h3>
-                    <p className="text-sm font-thin p-1">
+                    <p className="text-muted-foreground p-1">
                       {event.description || "No description available"}
                     </p>
                     <p className="text-sm font-semibold">
