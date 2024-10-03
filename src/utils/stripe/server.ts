@@ -23,7 +23,7 @@ export async function checkoutWithStripe(
   const mode = price.type === "recurring" ? "subscription" : "payment";
 
   // Get the base URL dynamically
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL!;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL! || "http://localhost:3000";
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
