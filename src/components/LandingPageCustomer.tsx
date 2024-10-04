@@ -64,6 +64,7 @@ import {
 type Project = {
   project_id: number;
   name: string;
+  last_name: string;
   status: string;
   user_uuid: string;
   estimated_start_date: string;
@@ -75,10 +76,12 @@ type Project = {
 type TeamMember = {
   assignment_id?: number;
   project_id: number;
-  employee_id: number;
+  employee_id: number | null;
   role: string;
-  pay_rate: number;
-  employee_name: string;
+  pay_rate: string | null;
+  employee_name: string | null;
+  isNew?: boolean;
+  isDeleted?: boolean;
 };
 
 const sub = "View & Manage All Of Your Projects";
@@ -92,6 +95,7 @@ const LandingPageCustomer: React.FC = React.memo(() => {
   const [localTeamMembers, setLocalTeamMembers] = useState<TeamMember[]>([]);
   const [projectToDelete, setProjectToDelete] = useState<number | null>(null);
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
+  const [projectToRename, setProjectToRename] = useState<Project | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -144,13 +148,16 @@ const LandingPageCustomer: React.FC = React.memo(() => {
           employee_id,
           role,
           pay_rate,
-          employees (name)
+          employees (name, last_name)
         `)
         .eq('project_id', selectedProject.project_id);
       if (error) throw error;
       return data.map(item => ({
         ...item,
-        employee_name: item.employees?.[0]?.name
+        employee_name: item.employees && item.employees[0] 
+          ? `${item.employees[0].name || ''} ${item.employees[0].last_name || ''}`.trim()
+          : '',
+        pay_rate: item.pay_rate?.toString() || ''
       }));
     },
     enabled: !!selectedProject,
@@ -164,12 +171,12 @@ const LandingPageCustomer: React.FC = React.memo(() => {
   }, [teamMembers]);
 
   // Fetch all active employees
-  const { data: employees } = useQuery<{ employee_id: number; name: string }[]>({
+  const { data: employees } = useQuery<{ employee_id: number; name: string; last_name: string }[]>({
     queryKey: ['employees'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('employee_id, name')
+        .select('employee_id, name, last_name')
         .eq('status', 'active');
       if (error) throw error;
       return data;
@@ -184,6 +191,7 @@ const LandingPageCustomer: React.FC = React.memo(() => {
         .from('project_role_options')
         .select('role_name');
       if (error) throw error;
+      //console.log('Fetched role options:', data);
       return data.map(option => option.role_name);
     },
   });
@@ -280,7 +288,7 @@ const LandingPageCustomer: React.FC = React.memo(() => {
   // Update project details mutation
   const updateProjectDetailsMutation = useMutation({
     mutationFn: async (updatedProject: Partial<Project>) => {
-      console.log("Updating project:", updatedProject);
+      //console.log("Updating project:", updatedProject);
       const { data, error } = await supabase
         .from('projects')
         .update(updatedProject)
@@ -306,20 +314,25 @@ const LandingPageCustomer: React.FC = React.memo(() => {
   // Update team assignment mutation
   const updateTeamAssignmentMutation = useMutation({
     mutationFn: async (assignment: Partial<TeamMember>) => {
-      //console.log("Updating team assignment:", assignment);
-      const { data, error } = await supabase
-        .from('project_team_assignments')
-        .upsert(assignment, { 
-          onConflict: 'project_id,employee_id',
-          ignoreDuplicates: false
-        })
-        .select();
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
+      if (assignment.assignment_id && assignment.assignment_id > 0) {
+        // Update existing assignment
+        const { data, error } = await supabase
+          .from('project_team_assignments')
+          .update(assignment)
+          .eq('assignment_id', assignment.assignment_id)
+          .select();
+        if (error) throw error;
+        return data[0];
+      } else {
+        // Insert new assignment
+        const { assignment_id, ...newAssignment } = assignment;
+        const { data, error } = await supabase
+          .from('project_team_assignments')
+          .insert(newAssignment)
+          .select();
+        if (error) throw error;
+        return data[0];
       }
-      //console.log("Update response:", data);
-      return data[0];
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teamMembers', selectedProject?.project_id] });
@@ -367,39 +380,94 @@ const LandingPageCustomer: React.FC = React.memo(() => {
     }
   };
 
-  const handleEmployeeChange = (index: number, employeeId: number, employeeName: string) => {
+  const handleEmployeeChange = (index: number, employeeId: number | null, fullName: string) => {
     setLocalTeamMembers(prev => prev.map((member, i) => 
-      i === index ? { ...member, employee_id: employeeId, employee_name: employeeName } : member
+      i === index ? { ...member, employee_id: employeeId, employee_name: fullName } : member
     ));
   };
-
+  
   const handleRoleChange = (index: number, role: string) => {
     setLocalTeamMembers(prev => prev.map((member, i) => 
       i === index ? { ...member, role } : member
     ));
   };
-
-  const handlePayRateChange = (index: number, payRate: number) => {
+  
+  const handlePayRateChange = (index: number, payRate: string) => {
     setLocalTeamMembers(prev => prev.map((member, i) => 
       i === index ? { ...member, pay_rate: payRate } : member
     ));
   };
-
+  
   const handleRemoveTeamMember = (index: number) => {
-    setLocalTeamMembers(prev => prev.filter((_, i) => i !== index));
+    const memberToRemove = localTeamMembers[index];
+    if (memberToRemove.assignment_id) {
+      // If the member has an assignment_id, mark it for deletion
+      setLocalTeamMembers(prev => prev.map((member, i) => 
+        i === index ? { ...member, isDeleted: true } : member
+      ));
+    } else {
+      // If it's a new member (no assignment_id), just remove it from the local state
+      setLocalTeamMembers(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
-  const saveTeamAssignments = () => {
-    localTeamMembers.forEach(member => {
-      if ('assignment_id' in member && member.assignment_id) {
-        // Update existing member
-        updateTeamAssignmentMutation.mutate(member);
-      } else {
-        // Add new member
-        addTeamMemberMutation.mutate(member);
+  const saveTeamAssignments = async () => {
+    try {
+      const deletions = localTeamMembers.filter(member => member.isDeleted && member.assignment_id);
+      const updates = localTeamMembers.filter(member => !member.isDeleted && member.assignment_id);
+      const additions = localTeamMembers.filter(member => !member.isDeleted && !member.assignment_id);
+  
+      // Delete members marked for deletion
+      await Promise.all(deletions.map(async (member) => {
+        const { error } = await supabase
+          .from('project_team_assignments')
+          .delete()
+          .eq('assignment_id', member.assignment_id);
+        if (error) throw error;
+      }));
+  
+      // Update existing members
+      await Promise.all(updates.map(async (member) => {
+        const { error } = await supabase
+          .from('project_team_assignments')
+          .update({
+            employee_id: member.employee_id,
+            role: member.role,
+            pay_rate: member.pay_rate ? parseFloat(member.pay_rate) : null,
+            employee_name: member.employee_name || null
+          })
+          .eq('assignment_id', member.assignment_id);
+        if (error) throw error;
+      }));
+  
+      // Add new members
+      if (additions.length > 0) {
+        const { error } = await supabase
+          .from('project_team_assignments')
+          .insert(additions.map(member => ({
+            project_id: member.project_id,
+            employee_id: member.employee_id,
+            role: member.role,
+            pay_rate: member.pay_rate ? parseFloat(member.pay_rate) : null,
+            employee_name: member.employee_name || null
+          })));
+        if (error) throw error;
       }
-    });
+  
+      toast.success('Team assignments saved successfully');
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', selectedProject?.project_id] });
+      
+      // Refresh local state to remove deleted members
+      setLocalTeamMembers(prev => prev.filter(member => !member.isDeleted));
+    } catch (error) {
+      console.error('Error saving team assignments:', error);
+      toast.error('Failed to save team assignments');
+    }
   };
+
+  useEffect(() => {
+    //console.log('localTeamMembers updated:', localTeamMembers);
+  }, [localTeamMembers]);
 
   const deleteTeamMemberMutation = useMutation({
     mutationFn: async (assignmentId: number) => {
@@ -504,15 +572,11 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                             </PopoverTrigger>
                             <PopoverContent className="w-40">
                               <div className="flex flex-col space-y-2">
-                                <Button
+                              <Button
                                   variant="ghost"
                                   onClick={() => {
-                                    const newName = prompt(
-                                      "Enter new project name",
-                                      project.name
-                                    );
-                                    if (newName)
-                                      renameProject(project.project_id, newName);
+                                    setProjectToRename(project);
+                                    setNewProjectName(project.name);
                                   }}
                                 >
                                   Rename
@@ -645,63 +709,67 @@ const LandingPageCustomer: React.FC = React.memo(() => {
               <TableCell colSpan={4}>Loading team members...</TableCell>
             </TableRow>
           ) : localTeamMembers.length > 0 ? (
-            localTeamMembers.map((member, index) => (
-              <TableRow key={member.assignment_id || index}>
+            localTeamMembers.filter(member => !member.isDeleted).map((member, index) => (
+              <TableRow key={member.assignment_id || `new-${index}`}>
                 <TableCell>
-                  <Select
-                    value={member.employee_id ? member.employee_id.toString() : undefined}
-                    onValueChange={(value) => {
-                      const employee = employees?.find(e => e.employee_id.toString() === value);
-                      if (employee) {
-                        handleEmployeeChange(index, employee.employee_id, employee.name);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees?.map((employee) => (
-                        <SelectItem key={employee.employee_id} value={employee.employee_id.toString()}>
-                          {employee.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select
+                  value={member.employee_id ? member.employee_id.toString() : undefined}
+                  onValueChange={(value) => {
+                    const employeeId = value ? parseInt(value, 10) : null;
+                    const employee = employees?.find(e => e.employee_id === employeeId);
+                    if (employee) {
+                      const fullName = `${employee.name} ${employee.last_name || ''}`.trim();
+                      handleEmployeeChange(index, employeeId, fullName);
+                    } else {
+                      handleEmployeeChange(index, null, '');
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees?.map((employee) => (
+                      <SelectItem key={employee.employee_id} value={employee.employee_id.toString()}>
+                        {`${employee.name} ${employee.last_name || ''}`.trim()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 </TableCell>
                 <TableCell>
-                  <Select
-                    value={member.role}
-                    onValueChange={(value) => handleRoleChange(index, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roleOptions?.map((role) => (
-                        <SelectItem key={role} value={role}>
-                          {role}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <Select
+        value={member.role}
+        onValueChange={(value) => handleRoleChange(index, value)}
+      >
+  <SelectTrigger>
+    <SelectValue placeholder="Select role" />
+  </SelectTrigger>
+  <SelectContent>
+    {roleOptions?.map((role) => (
+      <SelectItem key={role} value={role}>
+        {role}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
                 </TableCell>
                 <TableCell>
-                  <Input
-                    type="text"
-                    value={member.pay_rate ? member.pay_rate.toString() : ''}
-                    onChange={(e) => handlePayRateChange(index, parseFloat(e.target.value) || 0)}
-                    placeholder="Pay rate"
-                  />
-                </TableCell>
+      <Input
+        type="text"
+        value={member.pay_rate || ''}
+        onChange={(e) => handlePayRateChange(index, e.target.value)}
+        placeholder="Pay rate"
+      />
+    </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveTeamMember(index)}
-                  >
-                    <Cross2Icon className="h-4 w-4" />
-                  </Button>
+                <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleRemoveTeamMember(index)}
+      >
+        <Cross2Icon className="h-4 w-4" />
+      </Button>
                 </TableCell>
               </TableRow>
             ))
@@ -710,20 +778,21 @@ const LandingPageCustomer: React.FC = React.memo(() => {
       </Table>
     </CardContent>
     <CardFooter className="flex justify-between">
-      <Button 
-        onClick={() => {
-          const newMember: Omit<TeamMember, 'assignment_id'> = {
-            project_id: selectedProject!.project_id,
-            employee_id: 0,
-            employee_name: '',
-            role: '',
-            pay_rate: 0
-          };
-          setLocalTeamMembers(prev => [...prev, newMember]);
-        }} 
-      >
-        Add Team Member
-      </Button>
+    <Button 
+      onClick={() => {
+        const newMember: Omit<TeamMember, 'assignment_id'> = {
+          project_id: selectedProject!.project_id,
+          employee_id: null,
+          employee_name: '',
+          role: '',
+          pay_rate: null,
+          isNew: true
+        };
+        setLocalTeamMembers(prev => [...prev, newMember]);
+      }} 
+    >
+      Add Team Member
+    </Button>
       <Button onClick={saveTeamAssignments}>
         Save Team Assignments
       </Button>
@@ -813,6 +882,32 @@ const LandingPageCustomer: React.FC = React.memo(() => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteProject}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={projectToRename !== null} onOpenChange={() => setProjectToRename(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a new name for the project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
+            placeholder="Enter new project name"
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProjectToRename(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (projectToRename && newProjectName.trim() !== "") {
+                renameProject(projectToRename.project_id, newProjectName.trim());
+                setProjectToRename(null);
+              }
+            }}>
+              Rename
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
