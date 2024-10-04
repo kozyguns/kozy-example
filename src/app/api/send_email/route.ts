@@ -45,39 +45,39 @@ export async function POST(request: Request) {
       case "TimeOffApproved":
         emailTemplate = TimeOffApproved({
           ...templateData,
-          startDate: formatDateIfString(templateData.startDate),
-          endDate: formatDateIfString(templateData.endDate),
+          startDate: templateData.startDate,
+          endDate: templateData.endDate,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "TimeOffDenied":
         emailTemplate = TimeOffDenied({
           ...templateData,
-          startDate: formatDateIfString(templateData.startDate),
-          endDate: formatDateIfString(templateData.endDate),
+          startDate: templateData.startDate,
+          endDate: templateData.endDate,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "CalledOut":
         emailTemplate = CalledOut({
           ...templateData,
-          date: formatDateIfString(templateData.date),
+          date: templateData.date,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "LeftEarly":
         emailTemplate = LeftEarly({
           ...templateData,
-          date: formatDateIfString(templateData.date),
+          date: templateData.date,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "CustomStatus":
         emailTemplate = CustomStatus({
           ...templateData,
-          date: formatDateIfString(templateData.date),
+          date: templateData.date,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "GunsmithInspection":
         emailTemplate = GunsmithInspection({
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
           requestedBy: templateData.requestedBy,
           notes: templateData.notes,
         });
-        fromEmail = `TGR <request@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <request@${process.env.RESEND_DOMAIN}>`;
         break;
       case "OrderCustomerContacted":
         emailTemplate = OrderCustomerContacted({
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
           item: templateData.item,
           details: templateData.details,
         });
-        fromEmail = `TGR <orders@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <orders@${process.env.RESEND_DOMAIN}>`;
         break;
       case "OrderSetStatus":
         emailTemplate = OrderSetStatus({
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
           updatedBy: templateData.updatedBy,
           item: templateData.item,
         });
-        fromEmail = `TGR <orders@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <orders@${process.env.RESEND_DOMAIN}>`;
         break;
       case "SuggestionReply":
         emailTemplate = SuggestionReply({
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
           replyText: templateData.replyText,
           repliedBy: templateData.repliedBy,
         });
-        fromEmail = `TGR <suggestions@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <suggestions@${process.env.RESEND_DOMAIN}>`;
         break;
       case "TimeOffRequest":
         emailTemplate = TimeOffRequest({
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
           reason: templateData.reason,
           other_reason: templateData.other_reason,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "EmployeeOvertimeAlert":
         emailTemplate = EmployeeOvertimeAlert({
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
           clockInTime: templateData.clockInTime,
           currentTime: templateData.currentTime,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       case "AdminOvertimeAlert":
         emailTemplate = AdminOvertimeAlert({
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
           clockInTime: templateData.clockInTime,
           currentTime: templateData.currentTime,
         });
-        fromEmail = `TGR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
         break;
       default:
         throw new Error("Invalid template name");

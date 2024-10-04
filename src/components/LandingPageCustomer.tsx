@@ -1,11 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { TextGenerateEffect } from "./ui/text-generate-effect";
-import { TextGenerateColor } from "./ui/text-generate-color";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { TracingBeam } from "./ui/tracing-beam";
 import {
   Table,
@@ -46,86 +46,399 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/utils/supabase/client";
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Project = {
-  id: number;
+  project_id: number;
   name: string;
   status: string;
+  user_uuid: string;
+  estimated_start_date: string;
+  actual_start_date: string;
+  estimated_hours: number;
+  actual_hours: number;
 };
 
-const title = "AHR";
+type TeamMember = {
+  assignment_id?: number;
+  project_id: number;
+  employee_id: number;
+  role: string;
+  pay_rate: number;
+  employee_name: string;
+};
+
 const sub = "View & Manage All Of Your Projects";
 
-// Project status options
-const statusOptions = [
-  "To Bid",
-  "Bid Sent To Customer",
-  "Customer Approved",
-  "Job Complete",
-];
-
 const LandingPageCustomer: React.FC = React.memo(() => {
-  const [projects, setProjects] = useState([
-    { id: 1, name: "Project A", status: "To Bid" },
-    { id: 2, name: "Project B", status: "Bid Sent To Customer" },
-    { id: 3, name: "Project C", status: "Customer Approved" },
-    { id: 4, name: "Project D", status: "Job Complete" },
-  ]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [archivedProjects, setArchivedProjects] = useState<Project[]>([]);
+  const [editedProject, setEditedProject] = useState<Partial<Project> | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
+  const queryClient = useQueryClient();
+  const [isAddingMember, setIsAddingMember] = useState(false);
+  const [localTeamMembers, setLocalTeamMembers] = useState<TeamMember[]>([]);
+  const [projectToDelete, setProjectToDelete] = useState<number | null>(null);
+  const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
 
-  // Mock data for project details
-  const projectDetails = {
-    estimatedStartDate: "2023-07-01",
-    actualStartDate: "2023-07-05",
-    estimatedHours: 100,
-    actualHours: 95,
-  };
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      //console.log("Current user:", user);
+    };
+    checkUser();
+  }, []);
 
-  // Mock data for team members
-  const teamMembers = [
-    { id: 1, name: "John Doe" },
-    { id: 2, name: "Jane Smith" },
-    { id: 3, name: "Bob Johnson" },
-  ];
+  useEffect(() => {
+    if (selectedProject) {
+      setEditedProject(selectedProject);
+    }
+  }, [selectedProject]);
 
-  const updateProjectStatus = (projectId: number, newStatus: string) => {
-    setProjects(
-      projects.map((project) =>
-        project.id === projectId ? { ...project, status: newStatus } : project
-      )
-    );
-  };
+  // Fetch projects
+  const { data: projects, isLoading: isLoadingProjects } = useQuery<Project[]>({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch status options
+  const { data: statusOptions } = useQuery<string[]>({
+    queryKey: ['statusOptions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('project_status_options')
+        .select('status_name');
+      if (error) throw error;
+      return data.map(option => option.status_name);
+    },
+  });
+
+  // Fetch team members for a specific project
+  const { data: teamMembers, isLoading: isLoadingTeamMembers } = useQuery<TeamMember[]>({
+    queryKey: ['teamMembers', selectedProject?.project_id],
+    queryFn: async () => {
+      if (!selectedProject) return [];
+      const { data, error } = await supabase
+        .from('project_team_assignments')
+        .select(`
+          assignment_id,
+          project_id,
+          employee_id,
+          role,
+          pay_rate,
+          employees (name)
+        `)
+        .eq('project_id', selectedProject.project_id);
+      if (error) throw error;
+      return data.map(item => ({
+        ...item,
+        employee_name: item.employees?.[0]?.name
+      }));
+    },
+    enabled: !!selectedProject,
+  });
+
+  // Update localTeamMembers when teamMembers changes
+  useEffect(() => {
+    if (teamMembers) {
+      setLocalTeamMembers(teamMembers);
+    }
+  }, [teamMembers]);
+
+  // Fetch all active employees
+  const { data: employees } = useQuery<{ employee_id: number; name: string }[]>({
+    queryKey: ['employees'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('employee_id, name')
+        .eq('status', 'active');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch role options
+  const { data: roleOptions } = useQuery<string[]>({
+    queryKey: ['roleOptions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('project_role_options')
+        .select('role_name');
+      if (error) throw error;
+      return data.map(option => option.role_name);
+    },
+  });
+
+  // Add project mutation
+  const addProjectMutation = useMutation({
+    mutationFn: async (newProject: { name: string, status: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      //console.log("Attempting to insert project for user:", user.id);
+
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{
+          name: newProject.name,
+          status: newProject.status,
+          user_uuid: user.id
+        }])
+        .select();
+
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      //console.log("Inserted project:", data);
+      return data[0];
+    },
+    onError: (error) => {
+      console.error("Mutation error:", error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setNewProjectName("");
+    },
+  });
+
+  // Update project status mutation
+  const updateProjectStatusMutation = useMutation({
+    mutationFn: async ({ projectId, newStatus }: { projectId: number, newStatus: string }) => {
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ status: newStatus })
+        .eq('project_id', projectId)
+        .select();
+      if (error) throw error;
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  // Delete project mutation
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      // Start a transaction
+      const { error: transactionError } = await supabase.rpc('delete_project_and_assignments', {
+        p_project_id: projectId
+      });
+
+      if (transactionError) {
+        console.error('Error in delete transaction:', transactionError);
+        throw transactionError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project');
+    },
+  });
+
+  // Rename project mutation
+  const renameProjectMutation = useMutation({
+    mutationFn: async ({ projectId, newName }: { projectId: number, newName: string }) => {
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ name: newName })
+        .eq('project_id', projectId)
+        .select();
+      if (error) throw error;
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
+
+  // Update project details mutation
+  const updateProjectDetailsMutation = useMutation({
+    mutationFn: async (updatedProject: Partial<Project>) => {
+      console.log("Updating project:", updatedProject);
+      const { data, error } = await supabase
+        .from('projects')
+        .update(updatedProject)
+        .eq('project_id', updatedProject.project_id)
+        .select();
+      if (error) {
+        console.error("Error updating project:", error);
+        throw error;
+      }
+      //console.log("Update response:", data);
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Project details updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating project:', error);
+      toast.error('Failed to update project details');
+    },
+  });
+
+  // Update team assignment mutation
+  const updateTeamAssignmentMutation = useMutation({
+    mutationFn: async (assignment: Partial<TeamMember>) => {
+      //console.log("Updating team assignment:", assignment);
+      const { data, error } = await supabase
+        .from('project_team_assignments')
+        .upsert(assignment, { 
+          onConflict: 'project_id,employee_id',
+          ignoreDuplicates: false
+        })
+        .select();
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      //console.log("Update response:", data);
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', selectedProject?.project_id] });
+      toast.success('Team assignment updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating team assignment:', error);
+      toast.error('Failed to update team assignment');
+    },
+  });
 
   const addProject = () => {
     if (newProjectName.trim() !== "") {
-      const newProject = {
-        id: projects.length + 1,
-        name: newProjectName,
-        status: "To Bid",
-      };
-      setProjects([...projects, newProject]);
-      setNewProjectName("");
+      addProjectMutation.mutate({ name: newProjectName, status: "To Bid" });
+      setNewProjectName(""); // Clear the input
+      setIsAddProjectDialogOpen(false); // Close the dialog
     }
   };
 
+  const updateProjectStatus = (projectId: number, newStatus: string) => {
+    updateProjectStatusMutation.mutate({ projectId, newStatus });
+  };
+
   const deleteProject = (projectId: number) => {
-    setProjects(projects.filter((project) => project.id !== projectId));
+    setProjectToDelete(projectId);
+  };
+
+  const confirmDeleteProject = () => {
+    if (projectToDelete !== null) {
+      deleteProjectMutation.mutate(projectToDelete);
+      setProjectToDelete(null);
+    }
   };
 
   const renameProject = (projectId: number, newName: string) => {
-    setProjects(
-      projects.map((project) =>
-        project.id === projectId ? { ...project, name: newName } : project
-      )
-    );
+    renameProjectMutation.mutate({ projectId, newName });
   };
 
-  const archiveProject = (project: any) => {
-    setArchivedProjects([...archivedProjects, project]);
-    setProjects(projects.filter((p) => p.id !== project.id));
+  const saveProjectDetails = () => {
+    if (editedProject) {
+      //console.log("Saving project details:", editedProject);
+      updateProjectDetailsMutation.mutate(editedProject);
+    } else {
+      // console.log("No changes to save");
+    }
   };
+
+  const handleEmployeeChange = (index: number, employeeId: number, employeeName: string) => {
+    setLocalTeamMembers(prev => prev.map((member, i) => 
+      i === index ? { ...member, employee_id: employeeId, employee_name: employeeName } : member
+    ));
+  };
+
+  const handleRoleChange = (index: number, role: string) => {
+    setLocalTeamMembers(prev => prev.map((member, i) => 
+      i === index ? { ...member, role } : member
+    ));
+  };
+
+  const handlePayRateChange = (index: number, payRate: number) => {
+    setLocalTeamMembers(prev => prev.map((member, i) => 
+      i === index ? { ...member, pay_rate: payRate } : member
+    ));
+  };
+
+  const handleRemoveTeamMember = (index: number) => {
+    setLocalTeamMembers(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const saveTeamAssignments = () => {
+    localTeamMembers.forEach(member => {
+      if ('assignment_id' in member && member.assignment_id) {
+        // Update existing member
+        updateTeamAssignmentMutation.mutate(member);
+      } else {
+        // Add new member
+        addTeamMemberMutation.mutate(member);
+      }
+    });
+  };
+
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: async (assignmentId: number) => {
+      const { error } = await supabase
+        .from('project_team_assignments')
+        .delete()
+        .eq('assignment_id', assignmentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', selectedProject?.project_id] });
+    },
+    onError: (error) => {
+      console.error('Error deleting team member:', error);
+      toast.error('Failed to delete team member');
+    },
+  });
+
+  const addTeamMemberMutation = useMutation({
+    mutationFn: async (newMember: Omit<TeamMember, 'assignment_id'>) => {
+      const { data, error } = await supabase
+        .from('project_team_assignments')
+        .insert(newMember)
+        .select();
+      if (error) throw error;
+      return data[0];
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', selectedProject?.project_id] });
+    },
+    onError: (error) => {
+      console.error('Error adding team member:', error);
+      toast.error('Failed to add team member');
+    },
+  });
+
+  if (isLoadingProjects) {
+    return <div>Loading projects...</div>;
+  }
 
   return (
     <div className="flex flex-col min-h-[100vh]">
@@ -144,28 +457,20 @@ const LandingPageCustomer: React.FC = React.memo(() => {
               />
             </div>
           </div>
-          <section className="w-full  ">
+          <section className="w-full">
             <h1 className="lg:leading-tighter text-center text-xl font-bold tracking-tighter sm:text-2xl md:text-3xl xl:text-[3rem] 2xl:text-[2.75rem]">
               <TextGenerateEffect words={sub} />
             </h1>
           </section>
-          {/* <div className="items-center justify-start text-start mt-12 ">
-            <h1 className="lg:leading-tighter text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl xl:text-[3.6rem] 2xl:text-[4rem] text-red-500">
-              <TextGenerateColor words={title} /></h1>
-              </div>
-      <div className="flex flex-col items-center justify-center text-end mt-12 ">
-            <h1 className="lg:leading-tighter text-xl font-bold tracking-tighter sm:text-2xl md:text-3xl xl:text-[3rem] 2xl:text-[2.75rem] mb-4">
-              <TextGenerateEffect words={sub} /></h1>
-              </div> */}
           <section className="w-full py-12 md:py-24 lg:py-32 border-y">
             {/* Projects Section */}
             {!selectedProject && (
               <section className="mb-12">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-semibold">Projects</h2>
-                  <Dialog>
+                  <Dialog open={isAddProjectDialogOpen} onOpenChange={setIsAddProjectDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button>Add A Project</Button>
+                      <Button onClick={() => setIsAddProjectDialogOpen(true)}>Add A Project</Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
@@ -183,9 +488,9 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                   </Dialog>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {projects.map((project) => (
+                  {projects?.map((project) => (
                     <Card
-                      key={project.id}
+                      key={project.project_id}
                       className="border border-gray-500 rounded-md"
                     >
                       <CardHeader>
@@ -207,14 +512,14 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                                       project.name
                                     );
                                     if (newName)
-                                      renameProject(project.id, newName);
+                                      renameProject(project.project_id, newName);
                                   }}
                                 >
                                   Rename
                                 </Button>
                                 <Button
                                   variant="ghost"
-                                  onClick={() => deleteProject(project.id)}
+                                  onClick={() => deleteProject(project.project_id)}
                                 >
                                   Delete
                                 </Button>
@@ -226,14 +531,14 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                           <Select
                             value={project.status}
                             onValueChange={(value) =>
-                              updateProjectStatus(project.id, value)
+                              updateProjectStatus(project.project_id, value)
                             }
                           >
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                             <SelectContent>
-                              {statusOptions.map((status) => (
+                              {statusOptions?.map((status) => (
                                 <SelectItem key={status} value={status}>
                                   {status}
                                 </SelectItem>
@@ -246,14 +551,6 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                         <Button onClick={() => setSelectedProject(project)}>
                           Details
                         </Button>
-                        {project.status === "Job Complete" && (
-                          <Button
-                            variant="outline"
-                            onClick={() => archiveProject(project)}
-                          >
-                            Archive This Project
-                          </Button>
-                        )}
                       </CardFooter>
                     </Card>
                   ))}
@@ -284,33 +581,30 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                       <CardContent className="space-y-4 pt-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="estimatedStartDate">
-                              Estimated Start Date
-                            </Label>
+                            <Label htmlFor="estimatedStartDate">Estimated Start Date</Label>
                             <Input
                               id="estimatedStartDate"
                               type="date"
-                              defaultValue={projectDetails.estimatedStartDate}
+                              value={editedProject?.estimated_start_date || ''}
+                              onChange={(e) => setEditedProject(prev => ({ ...prev, estimated_start_date: e.target.value }))}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="actualStartDate">
-                              Actual Start Date
-                            </Label>
+                            <Label htmlFor="actualStartDate">Actual Start Date</Label>
                             <Input
                               id="actualStartDate"
                               type="date"
-                              defaultValue={projectDetails.actualStartDate}
+                              value={editedProject?.actual_start_date || ''}
+                              onChange={(e) => setEditedProject(prev => ({ ...prev, actual_start_date: e.target.value }))}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="estimatedHours">
-                              Estimated Hours
-                            </Label>
+                            <Label htmlFor="estimatedHours">Estimated Hours</Label>
                             <Input
                               id="estimatedHours"
                               type="number"
-                              defaultValue={projectDetails.estimatedHours}
+                              value={editedProject?.estimated_hours || ''}
+                              onChange={(e) => setEditedProject(prev => ({ ...prev, estimated_hours: parseInt(e.target.value) }))}
                             />
                           </div>
                           <div className="space-y-2">
@@ -318,60 +612,124 @@ const LandingPageCustomer: React.FC = React.memo(() => {
                             <Input
                               id="actualHours"
                               type="number"
-                              defaultValue={projectDetails.actualHours}
+                              value={editedProject?.actual_hours || ''}
+                              onChange={(e) => setEditedProject(prev => ({ ...prev, actual_hours: parseInt(e.target.value) }))}
                             />
                           </div>
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button>Save Changes</Button>
+                        <Button onClick={saveProjectDetails}>Save Changes</Button>
                       </CardFooter>
                     </Card>
                   </TabsContent>
-                  <TabsContent value="team">
-                    <Card>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Name</TableHead>
-                              <TableHead>Role</TableHead>
-                              <TableHead>Pay Rate</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {teamMembers.map((member) => (
-                              <TableRow key={member.id}>
-                                <TableCell>{member.name}</TableCell>
-                                <TableCell>
-                                  <Select>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="foreman">
-                                        Foreman
-                                      </SelectItem>
-                                      <SelectItem value="lead">Lead</SelectItem>
-                                      <SelectItem value="assigned">
-                                        Assigned
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </TableCell>
-                                <TableCell>
-                                  <Input type="number" placeholder="Pay rate" />
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                      <CardFooter>
-                        <Button>Save Team Assignments</Button>
-                      </CardFooter>
-                    </Card>
-                  </TabsContent>
+
+                  
+
+{/* Team Assignments */}
+<TabsContent value="team">
+  <Card>
+    <CardContent>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Pay Rate</TableHead>
+            <TableHead></TableHead> {/* New column for remove button */}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoadingTeamMembers ? (
+            <TableRow>
+              <TableCell colSpan={4}>Loading team members...</TableCell>
+            </TableRow>
+          ) : localTeamMembers.length > 0 ? (
+            localTeamMembers.map((member, index) => (
+              <TableRow key={member.assignment_id || index}>
+                <TableCell>
+                  <Select
+                    value={member.employee_id ? member.employee_id.toString() : undefined}
+                    onValueChange={(value) => {
+                      const employee = employees?.find(e => e.employee_id.toString() === value);
+                      if (employee) {
+                        handleEmployeeChange(index, employee.employee_id, employee.name);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees?.map((employee) => (
+                        <SelectItem key={employee.employee_id} value={employee.employee_id.toString()}>
+                          {employee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={member.role}
+                    onValueChange={(value) => handleRoleChange(index, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roleOptions?.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="text"
+                    value={member.pay_rate ? member.pay_rate.toString() : ''}
+                    onChange={(e) => handlePayRateChange(index, parseFloat(e.target.value) || 0)}
+                    placeholder="Pay rate"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveTeamMember(index)}
+                  >
+                    <Cross2Icon className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : null}
+        </TableBody>
+      </Table>
+    </CardContent>
+    <CardFooter className="flex justify-between">
+      <Button 
+        onClick={() => {
+          const newMember: Omit<TeamMember, 'assignment_id'> = {
+            project_id: selectedProject!.project_id,
+            employee_id: 0,
+            employee_name: '',
+            role: '',
+            pay_rate: 0
+          };
+          setLocalTeamMembers(prev => [...prev, newMember]);
+        }} 
+      >
+        Add Team Member
+      </Button>
+      <Button onClick={saveTeamAssignments}>
+        Save Team Assignments
+      </Button>
+    </CardFooter>
+  </Card>
+</TabsContent>
                 </Tabs>
               </section>
             )}
@@ -444,6 +802,20 @@ const LandingPageCustomer: React.FC = React.memo(() => {
           </Link>
         </nav>
       </footer>
+      <AlertDialog open={projectToDelete !== null} onOpenChange={() => setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the project and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteProject}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 });
