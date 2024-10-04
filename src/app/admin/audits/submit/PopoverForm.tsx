@@ -223,11 +223,11 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
                   handleChange("drosCancel", checked)
                 }
               />
-              <Label>Cancelled DROS</Label>
+              <Label>Item Excluded</Label>
             </div>
 
             <div className="space-y-2">
-              <Label>DROS Number</Label>
+              <Label>Invoice Number</Label>
               <Input
                 value={formData.drosNumber}
                 onChange={(e) => handleChange("drosNumber", e.target.value)}
@@ -236,7 +236,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Sales Rep</Label>
+              <Label>Sales Staff</Label>
               <Select
                 value={formData.salesRep}
                 onValueChange={(value) => handleChange("salesRep", value)}
@@ -283,7 +283,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Audit Type</Label>
+              <Label>Transaction Details</Label>
               <Select
                 value={formData.auditType}
                 onValueChange={(value) => handleChange("auditType", value)}
@@ -302,7 +302,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Error Location</Label>
+              <Label>Audit Section</Label>
               <Select
                 value={formData.errorLocation}
                 onValueChange={(value) => handleChange("errorLocation", value)}
@@ -321,7 +321,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Error Details</Label>
+              <Label>Audit Category</Label>
               <Select
                 value={formData.errorDetails}
                 onValueChange={(value) => handleChange("errorDetails", value)}
@@ -340,7 +340,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="col-span-2 space-y-2">
-              <Label>Error Notes</Label>
+              <Label>Audit Details</Label>
               <Input
                 value={formData.errorNotes}
                 onChange={(e) => handleChange("errorNotes", e.target.value)}
@@ -349,7 +349,7 @@ export const PopoverForm: React.FC<PopoverFormProps> = ({
             </div>
 
             <div className="col-span-3">
-              <Button onClick={handleSubmit} variant="linkHover1">
+              <Button onClick={handleSubmit} variant="outline">
                 Submit
               </Button>
             </div>

@@ -168,7 +168,7 @@ export default function OrdersComponent() {
       toast.error("User information is not available. Please log in again.");
       return;
     }
-  
+
     const submissionData = {
       user_uuid: userUuid,
       name: userName || "Anonymous",
@@ -177,18 +177,18 @@ export default function OrdersComponent() {
       inquiry_type: data.inquiry_type,
       phone: data.phone,
       details: data.details,
-      status: "pending" // Set initial status
+      status: "pending", // Set initial status
     };
-  
+
     try {
       const { data: newRequest, error } = await supabase
         .from("support_requests")
         .insert(submissionData)
         .select()
         .single();
-  
+
       if (error) throw error;
-  
+
       // Send confirmation email to the employee
       await sendEmail("SupportRequestConfirmation", {
         recipientEmail: userEmail, // Send to the employee's email
@@ -199,13 +199,13 @@ export default function OrdersComponent() {
         requestId: newRequest.id,
         details: newRequest.details,
       });
-  
+
       // Send notification to super admins
       const { data: superAdmins } = await supabase
         .from("employees")
         .select("contact_info")
         .eq("role", "super admin");
-  
+
       if (superAdmins) {
         for (const admin of superAdmins) {
           await sendEmail("NewSupportRequestNotification", {
@@ -219,7 +219,7 @@ export default function OrdersComponent() {
           });
         }
       }
-  
+
       toast.success("Your support request has been submitted.");
       reset();
       setIsDialogOpen(false);
@@ -260,7 +260,7 @@ export default function OrdersComponent() {
       .eq("field_name", "followup")
       .order("display_order");
 
-    console.log("Fetched followup data:", followup); // Add this line
+    // console.log("Fetched followup data:", followup); // Add this line
 
     setReferenceData({
       category: category?.map((c) => c.option_value) || [],
@@ -276,13 +276,13 @@ export default function OrdersComponent() {
   }, []);
 
   const handleCategoryChange = (value: string) => {
-    console.log("Selected category:", value); // Add this line
+    // console.log("Selected category:", value); // Add this line
     setSelectedCategory(value);
     updateSubCategoryOptions(value);
   };
 
   const updateSubCategoryOptions = (category: string) => {
-    console.log("Updating subcategory options for:", category); // Debugging log
+    // console.log("Updating subcategory options for:", category); // Debugging log
     switch (category) {
       case "Legal Inquiry":
         setSubCategoryOptions(referenceData.legal);
@@ -302,8 +302,8 @@ export default function OrdersComponent() {
   };
 
   useEffect(() => {
-    console.log("Selected Category:", selectedCategory); // Debugging log
-    console.log("Sub Category Options:", subCategoryOptions); // Debugging log
+    // console.log("Selected Category:", selectedCategory); // Debugging log
+    // console.log("Sub Category Options:", subCategoryOptions); // Debugging log
   }, [selectedCategory, subCategoryOptions]);
 
   return (

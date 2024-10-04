@@ -82,9 +82,9 @@ const schedComponents = [
     description: "View Team Schedules",
   },
   {
-    title: "Submit Time Off",
+    title: "Input Time Off Requests",
     href: "/team/crew/timeoffrequest",
-    description: "Submit A Request",
+    description: "When Staff Needs Time Off",
   },
   {
     title: "Review Time Off Requests",
@@ -92,9 +92,14 @@ const schedComponents = [
     description: "View All Requests For Time Off",
   },
   {
-    title: "Create | Manage Schedules",
+    title: "Create & Manage Scheduling",
     href: "/admin/schedules",
-    description: "Manage Schedules & Timesheets",
+    description: "Schedules & Time Clock Entries",
+  },
+  {
+    title: "Audit Management",
+    href: "/admin/audits",
+    description: "Submit Internal Audits",
   },
   {
     title: "Staff Profiles",
@@ -201,65 +206,56 @@ const reportsComps = [
 ];
 
 const manageComps = [
+  // {
+  //   title: "Staff Profiles",
+  //   href: "/admin/dashboard",
+  //   description: "All Profiles",
+  // },
   {
-    title: "Staff Profiles",
-    href: "/admin/dashboard",
-    description: "All Profiles",
-  },
-  {
-    title: "Weekly Agenda",
+    title: "Project Framework",
     href: "/admin/weeklyagenda",
-    description: "Weekly Agenda Topics",
+    description: "Framing & Tracking",
   },
+  // {
+  //   title: "Monthly Contest",
+  //   href: "/admin/audits/contest",
+  //   description: "Monthly Sales Contest",
+  // },
+  // {
+  //   title: "Sales Report",
+  //   href: "/admin/reports/sales",
+  //   description: "View Daily Sales",
+  // },
   {
-    title: "Monthly Contest",
-    href: "/admin/audits/contest",
-    description: "Monthly Sales Contest",
-  },
-  {
-    title: "Sales Report",
-    href: "/admin/reports/sales",
-    description: "View Daily Sales",
-  },
-  {
-    title: "Download Reports",
+    title: "Payroll Reports",
     href: "/admin/reports/download",
-    description: "Download Various Reports",
+    description: "Payroll & Timesheet Reports",
   },
   {
-    title: "Manage Employee Data",
+    title: "Manage Staff Details",
     href: "/team/employees",
-    description: "Set All Employee Details",
+    description: "Admin Only",
   },
-  {
-    title: "Audit Management",
-    href: "/admin/audits",
-    description: "Testing Audits",
-  },
+
   {
     title: "Upload Files",
     href: "/admin/upload",
     description: "Uploadthing",
   },
   {
-    title: "Reports Dashboard",
-    href: "/admin/reports/dashboard",
-    description: "Daily Dashboard",
-  },
-  {
     title: "Onboarding",
     href: "/admin/onboarding",
-    description: "Trial Onboarding",
+    description: "Onboard New Employees",
   },
   {
     title: "Products & Pricing",
     href: "/pricing",
-    description: "All Products & Subscriptions",
+    description: "View Products & Pricing",
   },
   {
-    title: "Classes Schedule",
+    title: "Class Schedules",
     href: "/public/classes",
-    description: "Class Scheduling Page",
+    description: "Manage Class Schedules",
   },
 ];
 
@@ -280,27 +276,27 @@ const comboComps = [
     description: "View All Certifications",
   },
   {
-    title: "Submit Range Walks",
+    title: "Inspection Report",
     href: "/team/rangewalk",
-    description: "Submit Daily Range Walks",
+    description: "Submit Daily Inspections",
   },
   {
-    title: "Submit Range Repairs",
+    title: "Maintenance Repairs",
     href: "/team/rangewalk/report",
-    description: "View All Range Walks & Repairs",
+    description: "View All Repairs",
   },
   {
-    title: "Submit Daily Deposits",
+    title: "Daily Deposits",
     href: "/team/deposits",
-    description: "Daily Deposits",
+    description: "Submit Daily Deposits",
   },
   {
-    title: "Submit Claimed Points",
+    title: "Partner Sales",
     href: "/team/crew/points",
-    description: "Report All Submitted Points",
+    description: "Report All Claimed Sales",
   },
   {
-    title: "Submit Special Orders",
+    title: "Special Orders",
     href: "/sales/orders",
     description: "Submit Requests For Customers",
   },
@@ -310,14 +306,19 @@ const comboComps = [
     description: "View Submitted Orders",
   },
   {
-    title: "Gunsmithing",
+    title: "Inventory Maintenance",
     href: "/team/gunsmithing",
-    description: "Weekly Gunsmithing Maintenance",
+    description: "Weekly Maintenance Reporting",
   },
   {
-    title: "Rental Firearms Checklist",
+    title: "Inventory Inspection",
     href: "/team/rentals/checklist",
-    description: "Rental Inventory Check",
+    description: "Inventory Inspection Checklist",
+  },
+  {
+    title: "Submit Support Requests",
+    href: "/team/support/inquiries",
+    description: "Submit Support Requests",
   },
 ];
 
@@ -576,7 +577,7 @@ const HeaderSuperAdmin = React.memo(() => {
       <header className="flex justify-between items-center p-2">
         <NavigationMenu>
           <NavigationMenuList className="flex space-x-4 mr-3">
-            <NavigationMenuItem>
+            {/* <NavigationMenuItem>
               <NavigationMenuTrigger>Auditing</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
@@ -591,7 +592,7 @@ const HeaderSuperAdmin = React.memo(() => {
                   ))}
                 </ul>
               </NavigationMenuContent>
-            </NavigationMenuItem>
+            </NavigationMenuItem> */}
             <NavigationMenuItem>
               <NavigationMenuTrigger>Staff Management</NavigationMenuTrigger>
               <NavigationMenuContent>
@@ -625,7 +626,7 @@ const HeaderSuperAdmin = React.memo(() => {
               </NavigationMenuContent>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuTrigger>Management</NavigationMenuTrigger>
+              <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
                   {manageComps.map((component) => (
@@ -656,7 +657,7 @@ const HeaderSuperAdmin = React.memo(() => {
                 </ul>
               </NavigationMenuContent>
             </NavigationMenuItem>
-            <NavigationMenuItem>
+            {/* <NavigationMenuItem>
               <NavigationMenuTrigger>AIM</NavigationMenuTrigger>
               <NavigationMenuContent>
                 <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
@@ -671,7 +672,7 @@ const HeaderSuperAdmin = React.memo(() => {
                   ))}
                 </ul>
               </NavigationMenuContent>
-            </NavigationMenuItem>
+            </NavigationMenuItem> */}
           </NavigationMenuList>
         </NavigationMenu>
         <div className="flex items-center">

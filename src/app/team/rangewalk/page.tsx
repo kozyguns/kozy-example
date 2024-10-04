@@ -145,15 +145,15 @@ export default function Component() {
     >
       <Card className="w-full max-w-md mx-auto my-24">
         <CardHeader>
-          <CardTitle>Range Walk Report</CardTitle>
+          <CardTitle>Maintenance Report</CardTitle>
           <CardDescription>
-            Please fill out the form to report any issues from your range walk.
+            Please fill out the form to report any issues from your inspection.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-6">
             <div className="grid gap-2">
-              <Label htmlFor="date">Date Of Range Walk</Label>
+              <Label htmlFor="date">Date Of Inspection</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -175,7 +175,7 @@ export default function Component() {
               </Popover>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="lanes">Lanes That Were Checked</Label>
+              <Label htmlFor="lanes">Areas That Were Inspected</Label>
               <Select onValueChange={setLanes}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select lanes" />
@@ -190,7 +190,7 @@ export default function Component() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="problems">Lanes With Problems</Label>
+              <Label htmlFor="problems">Areas With Issues</Label>
               <MultiSelect
                 options={lanesOptions}
                 selected={selectedProblems}
@@ -198,7 +198,7 @@ export default function Component() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Describe The Problems</Label>
+              <Label htmlFor="description">Describe The Issues</Label>
               <Textarea
                 id="description"
                 value={description}

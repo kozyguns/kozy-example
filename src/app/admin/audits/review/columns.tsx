@@ -28,14 +28,15 @@ export type AuditData = {
   error_notes?: string | null;
   dros_cancel: string | null;
   label?: string;
-
 };
 
-export const createColumns = (refreshData: () => void): ColumnDef<AuditData>[] => [
+export const createColumns = (
+  refreshData: () => void
+): ColumnDef<AuditData>[] => [
   {
     accessorKey: "dros_number",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="DROS Number" />
+      <DataTableColumnHeader column={column} title="Invoice Number" />
     ),
     cell: ({ row }) => {
       const label = labels.find((label) => label.value === row.original.label);
@@ -55,7 +56,7 @@ export const createColumns = (refreshData: () => void): ColumnDef<AuditData>[] =
   },
   {
     accessorKey: "salesreps",
-    header: "Sales Reps",
+    header: "Sales Staff",
     meta: {
       style: { width: "100px" },
     },
@@ -111,28 +112,28 @@ export const createColumns = (refreshData: () => void): ColumnDef<AuditData>[] =
   // },
   {
     accessorKey: "error_location",
-    header: "Error Location",
+    header: "Audit Section",
     meta: {
       style: { width: "200px" },
     },
   },
   {
     accessorKey: "error_details",
-    header: "Error Details",
+    header: "Audit Category",
     meta: {
       style: { width: "400px" },
     },
   },
   {
     accessorKey: "error_notes",
-    header: "Notes",
+    header: "Audit Details",
     meta: {
       style: { width: "450px" },
     },
   },
   {
     accessorKey: "dros_cancel",
-    header: "DROS Cancelled",
+    header: "Item Excluded",
     meta: {
       style: { width: "150px" },
     },

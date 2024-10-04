@@ -1230,7 +1230,7 @@ const EmployeeProfile = () => {
             <div className="flex items-center gap-4">
               <Avatar>
                 <img
-                  src={employee.avatar_url || "/Banner.png"}
+                  src={employee.avatar_url || "/ahr.png"}
                   alt="Employee Avatar"
                 />
                 <AvatarFallback>{employee.name[0]}</AvatarFallback>

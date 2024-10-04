@@ -55,7 +55,7 @@ import { Progress } from "@/components/ui/progress";
 import { useRole } from "@/context/RoleContext";
 import { Textarea } from "@/components/ui/textarea";
 import RoleBasedWrapper from "@/components/RoleBasedWrapper";
-import DailyChecklist from "@/app/team/gunsmithing/DailyChecklist"; 
+import DailyChecklist from "@/app/team/gunsmithing/DailyChecklist";
 
 interface Certificate {
   id: number;
@@ -310,7 +310,6 @@ export default function AdminDashboard() {
       console.error("Error fetching daily checklist status:", error);
     }
   };
-
 
   async function fetchLatestDailyDeposit() {
     const { data, error } = await supabase
@@ -746,7 +745,7 @@ export default function AdminDashboard() {
       return;
     }
 
-    console.log("Current user data:", user); // Log the entire user object
+    // console.log("Current user data:", user); // Log the entire user object
 
     const fullName = user?.user_metadata?.name || "";
     const firstName = fullName.split(" ")[0]; // This will get the first word of the name
@@ -816,14 +815,14 @@ export default function AdminDashboard() {
             <CardContent> */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 overflow-hidden">
               <ReportCard
-                title="Gunsmithing Weekly Maintenance"
+                title="Weekly Inventory Overview"
                 date={gunsmiths?.last_maintenance_date || null}
                 icon={<PersonIcon className="h-6 w-6" />}
                 extraInfo={gunsmiths?.firearm_name}
                 type="maintenance"
               />
               <ReportCard
-                title="Firearms With Gunsmith"
+                title="Inventory Maintenance Insight"
                 date={dailyChecklistStatus.lastSubmissionDate}
                 icon={<ClipboardIcon className="h-6 w-6" />}
                 extraInfo={`${dailyChecklistStatus.firearmsCount} firearms with gunsmith`}
@@ -837,7 +836,7 @@ export default function AdminDashboard() {
               />
 
               <ReportCard
-                title="Daily Range Walk Reports"
+                title="Projects & Tasks"
                 date={rangeWalk?.date_of_walk || null}
                 icon={<MagnifyingGlassIcon className="h-6 w-6" />}
                 extraInfo={rangeWalk?.user_name}
@@ -870,7 +869,6 @@ export default function AdminDashboard() {
                 type="certificate"
                 details={certificates}
               />
-              
 
               {/* Certificate Renewals List*/}
               {/* <Card className="flex flex-col overflow-hidden">
@@ -1219,7 +1217,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Total Net Sales With Firearms
+                    Total Net Sales
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1231,7 +1229,7 @@ export default function AdminDashboard() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Total Net Sales Without Firearms
+                    Total Net Sales Minus Exclusions
                   </CardTitle>
                 </CardHeader>
                 <CardContent>

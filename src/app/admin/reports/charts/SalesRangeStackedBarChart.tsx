@@ -174,6 +174,7 @@ const SalesRangeStackedBarChart: React.FC<SalesRangeStackedBarChartProps> = ({
                   textAnchor: "end",
                   height: 60,
                 }}
+                legendPosition="left"
               />
             </div>
           </ResponsiveContainer>

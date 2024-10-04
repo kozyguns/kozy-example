@@ -383,7 +383,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
             <div className="grid p-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>DROS Cancellation</CardTitle>
+                  <CardTitle>Item Exclusion</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -398,9 +398,9 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Cancelled DROS</FormLabel>
+                          <FormLabel>Excluded Items</FormLabel>
                           <FormDescription>
-                            Only Select When DROS Was Cancelled
+                            Only Select When Items Were Not Sold
                           </FormDescription>
                         </div>
                         <FormMessage />
@@ -412,7 +412,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>DROS | Invoice Number</CardTitle>
+                  <CardTitle>Invoice Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -420,7 +420,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                     control={control}
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>DROS | Invoice | FSC</FormLabel>
+                        <FormLabel>Invoice Number</FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="Enter The 'Dash'" />
                         </FormControl>
@@ -436,7 +436,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Sales Rep</CardTitle>
+                  <CardTitle>Staff Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -444,13 +444,13 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                     name="salesRep"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Select The Sales Rep</FormLabel>
+                        <FormLabel>Select The Staff Member</FormLabel>
                         <RenderDropdown
                           field={field}
                           options={salesRepOptions}
-                          placeholder="Select A Sales Rep"
+                          placeholder="Select A Staff Member"
                         />
-                        <FormDescription>Who Dun Messed Up</FormDescription>
+                        <FormDescription>Who Is Being Audited</FormDescription>
                         <FormMessage>{errors.salesRep?.message}</FormMessage>
                       </FormItem>
                     )}
@@ -468,7 +468,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                     name="transDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Transaction Date</FormLabel>
+                        <FormLabel>Date Of Transaction</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -493,7 +493,8 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                                 field.onChange(date);
                               }}
                               disabledDays={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
+                                date > new Date() ||
+                                date < new Date("1900-01-01")
                               }
                             />
                           </PopoverContent>
@@ -509,10 +510,13 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
             </div>
 
             {fields.map((field, index) => (
-              <div key={field.id} className="grid p-2 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+              <div
+                key={field.id}
+                className="grid p-2 gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4"
+              >
                 <Card>
                   <CardHeader>
-                    <CardTitle>Transaction Type</CardTitle>
+                    <CardTitle>Transaction Details</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Controller
@@ -537,7 +541,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Audit Location</CardTitle>
+                    <CardTitle>Audit Section Details</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Controller
@@ -594,7 +598,10 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                       name={`audits.${index}.errorNotes`}
                       control={control}
                       render={({ field }) => (
-                        <Textarea {...field} placeholder="Details On What Was Audited" />
+                        <Textarea
+                          {...field}
+                          placeholder="Details About The Audit - Create New Line For Each Note Of Same Category"
+                        />
                       )}
                     />
                   </CardContent>
@@ -602,7 +609,7 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
 
                 <div className="md:col-span-2 lg:col-span-3 flex justify-end">
                   <Button variant="linkHover2" onClick={() => remove(index)}>
-                    Remove Audit
+                    Remove Category
                   </Button>
                 </div>
               </div>
@@ -621,10 +628,10 @@ export default function SubmitAudits({ onAuditSubmitted }: SubmitAuditsProps) {
                   })
                 }
               >
-                Add Another Audit
+                Add Another Category
               </Button>
-              <Button variant="linkHover1" type="submit">
-                Submit
+              <Button variant="outline" type="submit">
+                Submit Audit
               </Button>
             </div>
           </form>

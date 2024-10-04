@@ -301,15 +301,15 @@ export default function AuditsPage() {
   return (
     <RoleBasedWrapper allowedRoles={["auditor", "admin", "super admin"]}>
       <main className="grid flex-1 items-start my-4 mb-4 max-w-8xl gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-        <div className="mb-10 my-8">
+        {/* <div className="mb-10 my-8">
           <SupportNavMenu />
-        </div>
+        </div> */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center space-x-2">
             <TabsList>
-              <TabsTrigger value="submit">Submit Audits</TabsTrigger>
+              <TabsTrigger value="submit">Submit Audit</TabsTrigger>
               <TabsTrigger value="review">Review Audits</TabsTrigger>
-              <TabsTrigger value="contest">Sales Contest</TabsTrigger>
+              <TabsTrigger value="contest">Sales Progress</TabsTrigger>
             </TabsList>
           </div>
 
@@ -422,7 +422,7 @@ export default function AuditsPage() {
                   <Card className="mt-4">
                     <CardHeader>
                       <CardTitle className="text-2xl font-bold">
-                        Total # Of DROS
+                        Serialized Sales
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
@@ -430,7 +430,7 @@ export default function AuditsPage() {
                         <DataTableProfile
                           columns={[
                             {
-                              Header: "Total DROS",
+                              Header: "Total Itemized Sales",
                               accessor: "TotalDros",
                             },
                           ]}
@@ -496,8 +496,8 @@ export default function AuditsPage() {
                 <div className="text-left">
                   <DataTableProfile
                     columns={[
-                      { Header: "Sales Rep", accessor: "Lanid" },
-                      { Header: "Total DROS", accessor: "TotalDros" },
+                      { Header: "Sales Staff", accessor: "Lanid" },
+                      { Header: "Serialized Sales", accessor: "TotalDros" },
                       { Header: "Points Deducted", accessor: "PointsDeducted" },
                       { Header: "Total Points", accessor: "TotalPoints" },
                     ]}
