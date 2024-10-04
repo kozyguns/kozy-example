@@ -257,6 +257,11 @@ const manageComps = [
     href: "/public/classes",
     description: "Manage Class Schedules",
   },
+  {
+    title: "Support Requests",
+    href: "/team/support/inquiries/review",
+    description: "Update Support Requests",
+  },
 ];
 
 const comboComps = [

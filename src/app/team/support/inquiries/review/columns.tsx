@@ -1,9 +1,8 @@
 "use client";
-import { ColumnDef as BaseColumnDef } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "../../../../admin/audits/review/data-table-column-header";
 import { SupportRequestTableRowActions } from "./support-request-table-row-actions";
 import { statuses, priorities, categories } from "./data";
-import { includesArrayString } from "./custom-filter";
 
 export type SupportRequest = {
   id: string;
@@ -20,23 +19,11 @@ export type SupportRequest = {
   priority: string;
 };
 
-export type ColumnDef<TData, TValue = unknown> = BaseColumnDef<
-  TData,
-  TValue
-> & {
-  meta?: {
-    style?: React.CSSProperties;
-  };
-};
-
-// Add this type
 export type TableMeta = {
   setStatus: (id: string, status: string) => void;
 };
 
-export const createColumns = (
-  setStatus: (id: string, status: string) => void
-): ColumnDef<SupportRequest>[] => [
+export const columns: ColumnDef<SupportRequest>[] = [
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -51,6 +38,12 @@ export const createColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Category" />
     ),
+    cell: ({ row }) => {
+      const category = categories.find(
+        (c) => c.value === row.getValue("category")
+      );
+      return category ? category.label : row.getValue("category");
+    },
     meta: {
       style: { width: "150px" },
     },
@@ -94,7 +87,8 @@ export const createColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Date Submitted" />
     ),
-    cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString(),
+    cell: ({ row }) =>
+      new Date(row.getValue("created_at")).toLocaleDateString(),
     meta: {
       style: { width: "150px" },
     },
@@ -110,25 +104,15 @@ export const createColumns = (
         <div className="flex items-center">
           <span>{status.label}</span>
         </div>
-      ) : row.getValue("status");
+      ) : (
+        row.getValue("status")
+      );
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id));
     },
     meta: {
       style: { width: "150px" },
-    },
-  },
-  {
-    accessorKey: "category",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Category" />
-    ),
-    cell: ({ row }) => {
-      const category = categories.find(
-        (c) => c.value === row.getValue("category")
-      );
-      return category ? category.label : row.getValue("category");
     },
   },
   {

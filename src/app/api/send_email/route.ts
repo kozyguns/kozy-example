@@ -13,6 +13,7 @@ import OrderSetStatus from "../../../../emails/OrderSetStatus";
 import SuggestionReply from "../../../../emails/SuggestionReply";
 import AdminOvertimeAlert from "../../../../emails/AdminOvertimeAlert";
 import EmployeeOvertimeAlert from "../../../../emails/EmployeeOvertimeAlert";
+import SupportRequestStatusUpdate from "../../../../emails/SupportRequestStatusUpdate";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -142,6 +143,17 @@ export async function POST(request: Request) {
           currentTime: templateData.currentTime,
         });
         fromEmail = `AHR <scheduling@${process.env.RESEND_DOMAIN}>`;
+        break;
+      case "SupportRequestStatusUpdate":
+        emailTemplate = SupportRequestStatusUpdate({
+          id: templateData.id,
+          name: templateData.name,
+          newStatus: templateData.newStatus,
+          category: templateData.category,
+          inquiryType: templateData.inquiryType,
+          updatedBy: templateData.updatedBy,
+        });
+        fromEmail = `AHR <support@${process.env.RESEND_DOMAIN}>`;
         break;
       default:
         throw new Error("Invalid template name");

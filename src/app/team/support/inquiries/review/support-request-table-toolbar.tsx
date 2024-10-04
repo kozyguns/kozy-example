@@ -23,9 +23,7 @@ export function SupportRequestTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-4">
         <Input
           placeholder="Filter By Name..."
-          value={
-            (table.getColumn("employee_name")?.getFilterValue() as string) ?? ""
-          }
+          value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
@@ -33,9 +31,14 @@ export function SupportRequestTableToolbar<TData>({
         />
         <Input
           placeholder="Filter By Email..."
-          value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+          value={
+            (table.getColumn("employee_email")?.getFilterValue() as string) ??
+            ""
+          }
           onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
+            table
+              .getColumn("employee_email")
+              ?.setFilterValue(event.target.value)
           }
           className="h-8 w-[150px] lg:w-[250px]"
         />
