@@ -69,7 +69,7 @@ export function TimesheetRowActions({
       .select();
 
     if (error) {
-      console.error(`Error clearing ${field}:`, error);
+      //console.(`Error clearing ${field}:`, error);
     } else if (data && data.length > 0) {
       updateTimesheet(data[0] as TimesheetData);
       // Update local state
@@ -114,7 +114,7 @@ export function TimesheetRowActions({
         .select();
 
       if (error) {
-        console.error("Error updating timesheet:", error);
+        //console.("Error updating timesheet:", error);
       } else if (data && data.length > 0) {
         updateTimesheet(data[0] as TimesheetData);
         fetchTimesheets(); // Refresh the entire timesheet data
@@ -138,9 +138,7 @@ export function TimesheetRowActions({
       <DropdownMenuContent align="end" className="w-[300px] p-2">
         <div className="flex items-center space-x-2 mb-2">
           <div className="flex-grow">
-            <label className="block text-sm font-medium text-gray-700">
-              Start Time
-            </label>
+            <label className="block text-sm font-medium ">Start Time</label>
             <Input
               type="time"
               value={startTime}
@@ -149,7 +147,7 @@ export function TimesheetRowActions({
           </div>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => clearField("start_time")}
             className="mt-5"
           >
@@ -159,9 +157,7 @@ export function TimesheetRowActions({
         </div>
         <div className="flex items-center space-x-2 mb-2">
           <div className="flex-grow">
-            <label className="block text-sm font-medium text-gray-700">
-              Lunch Start
-            </label>
+            <label className="block text-sm font-medium ">Lunch Start</label>
             <Input
               type="time"
               value={lunchStart}
@@ -170,7 +166,7 @@ export function TimesheetRowActions({
           </div>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => clearField("lunch_start")}
             className="mt-5"
           >
@@ -180,9 +176,7 @@ export function TimesheetRowActions({
         </div>
         <div className="flex items-center space-x-2 mb-2">
           <div className="flex-grow">
-            <label className="block text-sm font-medium text-gray-700">
-              Lunch End
-            </label>
+            <label className="block text-sm font-medium ">Lunch End</label>
             <Input
               type="time"
               value={lunchEnd}
@@ -191,7 +185,7 @@ export function TimesheetRowActions({
           </div>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => clearField("lunch_end")}
             className="mt-5"
           >
@@ -201,9 +195,7 @@ export function TimesheetRowActions({
         </div>
         <div className="flex items-center space-x-2 mb-2">
           <div className="flex-grow">
-            <label className="block text-sm font-medium text-gray-700">
-              End Time
-            </label>
+            <label className="block text-sm font-medium ">End Time</label>
             <Input
               type="time"
               value={endTime}
@@ -212,7 +204,7 @@ export function TimesheetRowActions({
           </div>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={() => clearField("end_time")}
             className="mt-5"
           >

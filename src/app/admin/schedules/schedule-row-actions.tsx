@@ -36,7 +36,7 @@ export function ScheduleRowActions<TData>({
         error,
       } = await supabase.auth.getUser();
       if (error) {
-        console.error("Error fetching user:", error.message);
+        //console.("Error fetching user:", error.message);
         return;
       }
 
@@ -48,7 +48,7 @@ export function ScheduleRowActions<TData>({
           .single();
 
         if (profileError) {
-          console.error("Error fetching profile:", profileError.message);
+          //console.("Error fetching profile:", profileError.message);
           return;
         }
 
@@ -72,7 +72,7 @@ export function ScheduleRowActions<TData>({
       .eq("id", schedule.id);
 
     if (error) {
-      console.error(`Error updating ${field}:`, error);
+      //console.(`Error updating ${field}:`, error);
     } else {
       // console.log(`Successfully updated ${field} to ${value} for schedule ID ${schedule.id}`);
       fetchReferenceSchedules(); // Refresh the data
@@ -148,7 +148,7 @@ export function ScheduleRowActions<TData>({
                   .delete()
                   .eq("id", schedule.id);
                 if (error) {
-                  console.error("Error deleting schedule:", error);
+                  //console.("Error deleting schedule:", error);
                 } else {
                   fetchReferenceSchedules();
                 }

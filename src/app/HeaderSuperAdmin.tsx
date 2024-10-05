@@ -282,7 +282,7 @@ const comboComps = [
   },
   {
     title: "Inspection Report",
-    href: "/team/rangewalk",
+    href: "/team/crew/range",
     description: "Submit Daily Inspections",
   },
   {
