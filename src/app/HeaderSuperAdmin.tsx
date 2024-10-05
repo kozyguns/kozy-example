@@ -79,13 +79,13 @@ const schedComponents = [
   {
     title: "Team Calendar",
     href: "/team/crew/calendar",
-    description: "View Team Schedules",
+    description: "Schedules & Time Off Requests",
   },
-  {
-    title: "Input Time Off Requests",
-    href: "/team/crew/timeoffrequest",
-    description: "When Staff Needs Time Off",
-  },
+  // {
+  //   title: "Input Time Off Requests",
+  //   href: "/team/crew/timeoffrequest",
+  //   description: "When Staff Needs Time Off",
+  // },
   {
     title: "Review Time Off Requests",
     href: "/admin/timeoffreview",
